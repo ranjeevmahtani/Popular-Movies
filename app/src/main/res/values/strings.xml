@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="image_base_URL">http://image.tmdb.org/t/p/</string>
+    <string name="image_size_parameter">w185</string>
+
+    <string name="API_base_URL">http://api.themoviedb.org/3/discover/movie</string>
+    <string name="API_query_sort_by">sort_by</string>
+    <string name="API_param_descending_popularity">popularity.desc</string>
+    <string name="API_param_descending_rating">vote_average.desc</string>
+    <string name="API_query_key">api_key</string>
+    <string name="API_param_key">f33b502258ce62793fa2d89c5ad380b0</string>
+
+    <string name="API_poster_base_URL">http://image.tmdb.org/t/p</string>
+
+</resources>
