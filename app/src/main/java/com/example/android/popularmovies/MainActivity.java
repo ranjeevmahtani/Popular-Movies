@@ -1,10 +1,8 @@
 package com.example.android.popularmovies;
 
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -37,7 +35,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(LOG_TAG, "entered onCreate");
         super.onCreate(savedInstanceState);
-        updateMovies();
+        discoverByPopularity();
         setContentView(R.layout.activity_main);
 
         GridView gridView = (GridView) findViewById(R.id.gridView);
@@ -78,6 +76,12 @@ public class MainActivity extends ActionBarActivity {
         if (id == R.id.action_settings) {
             return true;
         }
+        else if (id == R.id.action_sort_by_popularity){
+            discoverByPopularity();
+        }
+        else if(id ==R.id.action_sort_by_user_rating){
+            discoverByUserRating();
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -92,11 +96,11 @@ public class MainActivity extends ActionBarActivity {
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
 
         @Override
-        protected Movie[] doInBackground(String... strings){
+        protected Movie[] doInBackground(String... sortOption){
 
             //Log.v(LOG_TAG, "doing in background...");
 
-            URL queryURL = getQueryURL();
+            URL queryURL = getQueryURL(sortOption[0]);
             String moviesJsonStr = getMoviesData(queryURL);
             try{
                 Movie[] movies = getMovieArrayFromJsonStr(moviesJsonStr);
@@ -123,7 +127,7 @@ public class MainActivity extends ActionBarActivity {
             }
         }
 
-        private URL getQueryURL() {
+        private URL getQueryURL(String sortOption) {
 
             final String LOG_TAG = "getQueryURL";
 
@@ -136,7 +140,7 @@ public class MainActivity extends ActionBarActivity {
                         .appendPath("3")
                         .appendPath("discover")
                         .appendPath("movie")
-                        .appendQueryParameter(getString(R.string.API_query_sort_by), getString(R.string.API_param_descending_popularity))
+                        .appendQueryParameter(getString(R.string.API_query_sort_by), sortOption)
                         .appendQueryParameter(getString(R.string.API_query_key), getString(R.string.API_param_key));
 
                 //Log.v(LOG_TAG, builder.build().toString());
@@ -254,7 +258,7 @@ public class MainActivity extends ActionBarActivity {
 
                 moviesObjectArray[i] = movieObject;
 
-                Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
+                //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
 
             }
 
@@ -265,17 +269,19 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onStart() {
-        updateMovies();
+        discoverByPopularity();
         super.onStart();
 
     }
 
-    private void updateMovies() {
+    public void discoverByPopularity(){
         FetchMoviesTask moviesTask = new FetchMoviesTask();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        //String location = prefs.getString(getString(R.string.pref_location_key),
-        //        getString(R.string.pref_location_default));
-        moviesTask.execute();
+        moviesTask.execute(getString(R.string.API_param_descending_popularity));
+    }
+
+    public void discoverByUserRating(){
+        FetchMoviesTask moviesTask = new FetchMoviesTask();
+        moviesTask.execute(getString(R.string.API_param_descending_rating));
     }
 
 }

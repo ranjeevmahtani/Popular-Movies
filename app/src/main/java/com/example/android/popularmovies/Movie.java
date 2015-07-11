@@ -79,8 +79,7 @@ public class Movie {
                 .authority("image.tmdb.org")
                 .appendPath("t")
                 .appendPath("p")
-                .appendPath("w185")
-                ;
+                .appendPath("w185");
 
         return builder.build().toString() + posterPath;
     }
