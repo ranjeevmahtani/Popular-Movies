@@ -1,11 +1,13 @@
 package com.example.android.popularmovies;
 
 import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * Created by ranjeevmahtani on 7/10/15.
  */
-public class Movie {
+public class Movie implements Parcelable{
 
     private int id;
     private String title;
@@ -82,6 +84,40 @@ public class Movie {
                 .appendPath("w185");
 
         return builder.build().toString() + posterPath;
+    }
+
+    public int describeContents(){
+        return 0;
+    }
+
+    public void writeToParcel(Parcel out, int flags){
+        out.writeInt(id);
+        out.writeString(title);
+        out.writeString(posterPath);
+        out.writeString(synopsis);
+        out.writeDouble(userRating);
+        out.writeString(releaseDate);
+    }
+
+    public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
+        @Override
+        public Movie createFromParcel(Parcel in) {
+            return new Movie(in);
+        }
+
+        @Override
+        public Movie[] newArray(int size){
+            return new Movie[size];
+        }
+    };
+
+    private Movie(Parcel in){
+        id = in.readInt();
+        title = in.readString();
+        posterPath = in.readString();
+        synopsis = in.readString();
+        userRating = in.readDouble();
+        releaseDate = in.readString();
     }
 
 }

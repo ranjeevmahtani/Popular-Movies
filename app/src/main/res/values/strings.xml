@@ -18,5 +18,18 @@
     <string name="API_param_key">f33b502258ce62793fa2d89c5ad380b0</string>
 
     <string name="API_poster_base_URL">http://image.tmdb.org/t/p</string>
+    <string name="title_activity_movie_detail">MovieDetail</string>
+
+    <string name="sort_by_key">sort_by</string>
+
+    <string-array name="sort_by_entries">
+        <item>Descending Popularity</item>
+        <item>Descending User Rating</item>
+    </string-array>
+
+    <string-array name="sort_by_values">
+        <item>@string/API_param_descending_popularity</item>
+        <item>@string/API_param_descending_rating</item>
+    </string-array>
 
 </resources>

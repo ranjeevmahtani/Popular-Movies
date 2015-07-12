@@ -1,8 +1,12 @@
 package com.example.android.popularmovies;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -10,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,7 +38,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         Log.v(LOG_TAG, "entered onCreate");
         super.onCreate(savedInstanceState);
-        discoverByPopularity();
+        //discoverByPopularity();
         setContentView(R.layout.activity_main);
 
         GridView gridView = (GridView) findViewById(R.id.gridView);
@@ -44,18 +47,20 @@ public class MainActivity extends ActionBarActivity {
                 new MoviePosterAdapter(
                         this, // The current context (this activity)
                         new ArrayList<Movie>());
-
-        gridView.setAdapter(mMoviePosterAdapter);
-
-        //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
-
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v,
-                                    int position, long id) {
-                Toast.makeText(MainActivity.this, "you clicked on me!" + position,
-                        Toast.LENGTH_SHORT).show();
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                Parcelable movie = mMoviePosterAdapter.getItem(position);
+                Intent intent = new Intent(getBaseContext(), MovieDetail.class)
+                        .putExtra("movie", movie);
+                startActivity(intent);
+
             }
         });
+
+        gridView.setAdapter(mMoviePosterAdapter);
+        //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
     }
 
     @Override
@@ -74,15 +79,8 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            startActivity(new Intent(this,SettingsActivity.class));
         }
-        else if (id == R.id.action_sort_by_popularity){
-            discoverByPopularity();
-        }
-        else if(id ==R.id.action_sort_by_user_rating){
-            discoverByUserRating();
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -96,17 +94,16 @@ public class MainActivity extends ActionBarActivity {
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
 
         @Override
-        protected Movie[] doInBackground(String... sortOption){
+        protected Movie[] doInBackground(String... sortOption) {
 
             //Log.v(LOG_TAG, "doing in background...");
 
             URL queryURL = getQueryURL(sortOption[0]);
             String moviesJsonStr = getMoviesData(queryURL);
-            try{
+            try {
                 Movie[] movies = getMovieArrayFromJsonStr(moviesJsonStr);
                 return movies;
-            }
-            catch (JSONException e){
+            } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
                 return null;
@@ -121,7 +118,7 @@ public class MainActivity extends ActionBarActivity {
 
             if (movies != null) {
                 mMoviePosterAdapter.clear();
-                for(Movie movie : movies) {
+                for (Movie movie : movies) {
                     mMoviePosterAdapter.add(movie);
                 }
             }
@@ -130,8 +127,6 @@ public class MainActivity extends ActionBarActivity {
         private URL getQueryURL(String sortOption) {
 
             final String LOG_TAG = "getQueryURL";
-
-            //TODO: Conditionally sort by user preferred method
 
             try {
                 Uri.Builder builder = new Uri.Builder();
@@ -269,19 +264,16 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onStart() {
-        discoverByPopularity();
+        updateMovies();
         super.onStart();
 
     }
 
-    public void discoverByPopularity(){
+    public void updateMovies(){
         FetchMoviesTask moviesTask = new FetchMoviesTask();
-        moviesTask.execute(getString(R.string.API_param_descending_popularity));
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String sortBy = prefs.getString(getString(R.string.sort_by_key),
+                getString(R.string.API_param_descending_popularity));
+        moviesTask.execute(sortBy);
     }
-
-    public void discoverByUserRating(){
-        FetchMoviesTask moviesTask = new FetchMoviesTask();
-        moviesTask.execute(getString(R.string.API_param_descending_rating));
-    }
-
 }
