@@ -42,7 +42,7 @@ public class MovieDetailFragment extends Fragment {
 
             ((TextView)(rootView.findViewById(R.id.movie_rating)))
                     .setText
-                            (String.valueOf(movie.getMovieUserRating()));
+                            (String.valueOf(movie.getMovieUserRating())+"/10");
 
             ((TextView)(rootView.findViewById(R.id.movie_synopsis))).setText(movie.getMovieSynopsis());
         }
