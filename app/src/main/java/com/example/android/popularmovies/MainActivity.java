@@ -46,6 +46,29 @@ public class MainActivity extends ActionBarActivity {
 
         setContentView(R.layout.activity_main);
 
+        movieArrayList = new ArrayList<Movie>();
+
+        GridView gridView = (GridView) findViewById(R.id.gridView);
+
+        mMoviePosterAdapter =
+                new MoviePosterAdapter(
+                        this, // The current context (this activity)
+                        movieArrayList);
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                Parcelable movie = mMoviePosterAdapter.getItem(position);
+                Intent intent = new Intent(getBaseContext(), MovieDetail.class)
+                        .putExtra("movie", movie);
+                startActivity(intent);
+
+            }
+        });
+
+        gridView.setAdapter(mMoviePosterAdapter);
+        //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
+
         if (savedInstanceState != null && savedInstanceState.containsKey("movieArray")){
 
             Log.v(LOG_TAG,"savedInstanceState is not null, and it does contain a key called movieArray");
@@ -71,26 +94,7 @@ public class MainActivity extends ActionBarActivity {
             updateMovies();
         }
 
-        GridView gridView = (GridView) findViewById(R.id.gridView);
 
-        mMoviePosterAdapter =
-                new MoviePosterAdapter(
-                        this, // The current context (this activity)
-                        movieArrayList);
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                Parcelable movie = mMoviePosterAdapter.getItem(position);
-                Intent intent = new Intent(getBaseContext(), MovieDetail.class)
-                        .putExtra("movie", movie);
-                startActivity(intent);
-
-            }
-        });
-
-        gridView.setAdapter(mMoviePosterAdapter);
-        //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
     }
 
     @Override
