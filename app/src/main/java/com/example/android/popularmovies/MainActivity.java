@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -34,19 +35,48 @@ public class MainActivity extends ActionBarActivity {
 
     private MoviePosterAdapter mMoviePosterAdapter;
 
+    private ArrayList<Movie> movieArrayList;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         Log.v(LOG_TAG, "entered onCreate");
+
         super.onCreate(savedInstanceState);
-        //discoverByPopularity();
+
         setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null && savedInstanceState.containsKey("movieArray")){
+
+            Log.v(LOG_TAG,"savedInstanceState is not null, and it does contain a key called movieArray");
+            Log.v(LOG_TAG,"retrieving movies from saved movieArray");
+
+            Parcelable[] movieArray = savedInstanceState.getParcelableArray("movieArray");
+            movieArrayList.clear();
+            for (Parcelable movie : movieArray){
+                movieArrayList.add((Movie)movie);
+            }
+
+            mMoviePosterAdapter.clear();
+            for (Movie movie : movieArrayList){
+                mMoviePosterAdapter.add(movie);
+            }
+        }
+        else{
+
+            Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
+            Log.v(LOG_TAG, "updating movies via API call");
+
+            movieArrayList = new ArrayList<Movie>();
+            updateMovies();
+        }
 
         GridView gridView = (GridView) findViewById(R.id.gridView);
 
         mMoviePosterAdapter =
                 new MoviePosterAdapter(
                         this, // The current context (this activity)
-                        new ArrayList<Movie>());
+                        movieArrayList);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
@@ -61,6 +91,20 @@ public class MainActivity extends ActionBarActivity {
 
         gridView.setAdapter(mMoviePosterAdapter);
         //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState){
+
+        Parcelable[] movieArray = new Parcelable[movieArrayList.size()];
+
+        for (int i = 0; i < movieArrayList.size(); i++){
+            movieArray[i] = (movieArrayList.get(i));
+        }
+        outState.putParcelableArray("movieArray", movieArray);
+
+        super.onSaveInstanceState(outState);
+
     }
 
     @Override
@@ -117,6 +161,7 @@ public class MainActivity extends ActionBarActivity {
             //Log.v(LOG_TAG, "entered onPostExecute");
 
             if (movies != null) {
+                movieArrayList = new ArrayList<Movie>(Arrays.asList(movies));
                 mMoviePosterAdapter.clear();
                 for (Movie movie : movies) {
                     mMoviePosterAdapter.add(movie);
@@ -259,13 +304,6 @@ public class MainActivity extends ActionBarActivity {
 
             return moviesObjectArray;
         }
-
-    }
-
-    @Override
-    public void onStart() {
-        updateMovies();
-        super.onStart();
 
     }
 
