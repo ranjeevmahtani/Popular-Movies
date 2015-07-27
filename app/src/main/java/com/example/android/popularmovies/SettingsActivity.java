@@ -33,6 +33,21 @@ public class SettingsActivity extends PreferenceActivity
         bindPreferenceSummaryToValue(findPreference("sort_by"));
     }
 
+//    @Override
+//    protected void onPostCreate(Bundle savedInstanceState) {
+//        super.onPostCreate(savedInstanceState);
+//
+//        LinearLayout rootView = (LinearLayout)findViewById(R.id.settings_list);
+//        Toolbar bar = (Toolbar) LayoutInflater.from(this).inflate(R.layout.settings_toolbar,rootView, false);
+//        rootView.addView(bar,0); // insert at top
+//        bar.setNavigationOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                finish();
+//            }
+//        });
+//    }
+
     private void bindPreferenceSummaryToValue(Preference preference) {
         // Set the listener to watch for value changes.
         preference.setOnPreferenceChangeListener(this);

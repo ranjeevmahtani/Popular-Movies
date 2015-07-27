@@ -2,12 +2,17 @@
     <!-- NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
          dismiss it. -->
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
+
+    <!--This is the ListPreference displaying sort options within settings-->
+
     <ListPreference
         android:key="@string/sort_by_key"
         android:title="Sort By"
         android:defaultValue="@string/API_param_descending_popularity"
         android:entries="@array/sort_by_entries"
         android:entryValues="@array/sort_by_values"/>
+
+
 
 
 </PreferenceScreen>

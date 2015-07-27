@@ -35,7 +35,7 @@ public class MainActivity extends ActionBarActivity {
 
     private MoviePosterAdapter mMoviePosterAdapter;
 
-    private ArrayList<Movie> movieArrayList;
+    private ArrayList<Movie> mMovieArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,43 +52,44 @@ public class MainActivity extends ActionBarActivity {
                 new MoviePosterAdapter(
                         this, // The current context (this activity)
                         new ArrayList<Movie>());
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
+        AdapterView.OnItemClickListener listener = new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 Parcelable movie = mMoviePosterAdapter.getItem(position);
                 Intent intent = new Intent(getBaseContext(), MovieDetail.class)
-                        .putExtra("movie", movie);
+                        .putExtra("movie",movie);
                 startActivity(intent);
-
             }
-        });
+        };
+
+        gridView.setOnItemClickListener(listener);
 
         gridView.setAdapter(mMoviePosterAdapter);
         //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
 
         if (savedInstanceState != null && savedInstanceState.containsKey("movieArray")){
 
-            Log.v(LOG_TAG, "savedInstanceState is not null, and it does contain a key called movieArray");
-            Log.v(LOG_TAG,"retrieving movies from saved movieArray");
+            // Log.v(LOG_TAG, "savedInstanceState is not null, and it does contain a key called movieArray");
+            // Log.v(LOG_TAG,"retrieving movies from saved movieArray");
 
 
             Parcelable[] movieArray = savedInstanceState.getParcelableArray("movieArray");
-            movieArrayList = new ArrayList<Movie>();
+            mMovieArrayList = new ArrayList<Movie>();
             for (Parcelable movie : movieArray){
-                movieArrayList.add((Movie) movie);
+                mMovieArrayList.add((Movie) movie);
             }
 
             mMoviePosterAdapter.clear();
-            mMoviePosterAdapter.addAll(movieArrayList);
-            Log.v(LOG_TAG, "movieArrayList has been added to mMoviePosterAdapter");
+            mMoviePosterAdapter.addAll(mMovieArrayList);
+            // Log.v(LOG_TAG, "mMovieArrayList has been added to mMoviePosterAdapter");
         }
         else{
 
-            Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
-            Log.v(LOG_TAG, "updating movies via API call");
+            // Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
+            // Log.v(LOG_TAG, "updating movies via API call");
 
-            updateMovies();
+            discoverByPopularity();
         }
 
 
@@ -97,18 +98,23 @@ public class MainActivity extends ActionBarActivity {
     @Override
     public void onSaveInstanceState(Bundle outState){
 
-        Parcelable[] movieArray = new Parcelable[movieArrayList.size()];
+        if (mMovieArrayList !=null) {
+            Parcelable[] movieArray = new Parcelable[mMovieArrayList.size()];
 
-        for (int i = 0; i < movieArrayList.size(); i++){
-            movieArray[i] = (movieArrayList.get(i));
+            for (int i = 0; i < mMovieArrayList.size(); i++){
+                movieArray[i] = (mMovieArrayList.get(i));
+            }
+            outState.putParcelableArray("movieArray", movieArray);
         }
-        outState.putParcelableArray("movieArray", movieArray);
 
         super.onSaveInstanceState(outState);
 
-        Log.v(LOG_TAG, "instanceState saved");
-        Log.v(LOG_TAG, "outState.containsKey(\"movieArray\"): "
-                + String.valueOf(outState.containsKey("movieArray")));
+        // Log.v(LOG_TAG, "instanceState saved");
+        // Log.v(LOG_TAG, "outState.containsKey(\"movieArray\"): "
+        //        + String.valueOf(outState.containsKey("movieArray")));
+
+
+
     }
 
     @Override
@@ -126,7 +132,15 @@ public class MainActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+
+        if (id == R.id.action_sort_by_popularity) {
+            discoverByPopularity();
+        }
+        else if (id == R.id.action_sort_by_user_rating) {
+            discoverByUserRating();
+        }
+
+        else if (id == R.id.action_settings) {
             startActivity(new Intent(this,SettingsActivity.class));
         }
         return super.onOptionsItemSelected(item);
@@ -144,10 +158,14 @@ public class MainActivity extends ActionBarActivity {
         @Override
         protected Movie[] doInBackground(String... sortOption) {
 
-            //Log.v(LOG_TAG, "doing in background...");
+            // Log.v(LOG_TAG, "doing in background...");
+            // Log.v(LOG_TAG, "Sort Option: " + sortOption[0]);
 
             URL queryURL = getQueryURL(sortOption[0]);
+            // Log.v(LOG_TAG, "queryURL:" + queryURL.toString());
+
             String moviesJsonStr = getMoviesData(queryURL);
+
             try {
                 Movie[] movies = getMovieArrayFromJsonStr(moviesJsonStr);
                 return movies;
@@ -162,11 +180,15 @@ public class MainActivity extends ActionBarActivity {
         @Override
         protected void onPostExecute(Movie[] movies) {
 
-            //Log.v(LOG_TAG, "entered onPostExecute");
+            // Log.v(LOG_TAG, "entered onPostExecute");
 
             if (movies != null) {
-                movieArrayList = new ArrayList<Movie>(Arrays.asList(movies));
-                mMoviePosterAdapter.addAll(movieArrayList);
+                //Log.v(LOG_TAG, "movies != null");
+                mMovieArrayList = new ArrayList<Movie>(Arrays.asList(movies));
+                mMoviePosterAdapter.clear();
+                mMoviePosterAdapter.addAll(mMovieArrayList);
+                mMoviePosterAdapter.notifyDataSetChanged();
+
             }
         }
 
@@ -198,7 +220,7 @@ public class MainActivity extends ActionBarActivity {
         //A lot of code here copied from Sunshine app
         private String getMoviesData(URL queryURL) {
 
-            final String LOG_TAG = "getMovies()";
+            final String LOG_TAG = "getMoviesData()";
 
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -306,6 +328,16 @@ public class MainActivity extends ActionBarActivity {
             return moviesObjectArray;
         }
 
+    }
+
+    public void discoverByUserRating(){
+        FetchMoviesTask moviesTask = new FetchMoviesTask();
+        moviesTask.execute(getString(R.string.API_param_descending_rating));
+    }
+
+    public void discoverByPopularity() {
+        FetchMoviesTask moviesTask = new FetchMoviesTask();
+        moviesTask.execute(getString(R.string.API_param_descending_popularity));
     }
 
     public void updateMovies(){
