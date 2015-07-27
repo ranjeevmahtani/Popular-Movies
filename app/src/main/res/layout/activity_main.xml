@@ -1,14 +1,8 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:id="@+id/main_activity_frame_layout">
-
-    <GridView
-        android:id="@+id/gridView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:numColumns="2" />
-
-</FrameLayout>
+<fragment xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:id="@+id/fragment_discovery"
+android:name="com.example.android.popularmovies.DiscoveryFragment"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:context="com.example.android.popularmovies.app.DiscoveryFragment"
+tools:layout="@android:layout/list_content" />
