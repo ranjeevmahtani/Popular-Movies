@@ -3,12 +3,10 @@ package com.example.android.popularmovies;
 
 import android.app.Fragment;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -166,13 +164,16 @@ public class DiscoveryFragment extends Fragment {
             // Log.v(LOG_TAG, "doing in background...");
             // Log.v(LOG_TAG, "Sort Option: " + sortOption[0]);
 
-            URL queryURL = getQueryURL(sortOption[0]);
+            URL queryURL = getDiscoveryQueryUrl(sortOption[0]);
             // Log.v(LOG_TAG, "queryURL:" + queryURL.toString());
 
-            String moviesJsonStr = getMoviesData(queryURL);
+            String moviesJsonStr = requestDataFromApi(queryURL);
+            Movie[] movies = null;
 
             try {
-                Movie[] movies = getMovieArrayFromJsonStr(moviesJsonStr);
+                movies = getMovieArrayFromJsonStr(moviesJsonStr);
+                // saveMovieVideoIds(movies);
+                // Log.v(LOG_TAG, movies[0].getMovieTitle() + ", " + movies[0].getVideos());
                 return movies;
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
@@ -194,12 +195,17 @@ public class DiscoveryFragment extends Fragment {
                 mMoviePosterAdapter.addAll(mMovieArrayList);
                 mMoviePosterAdapter.notifyDataSetChanged();
 
+                // Log.v(LOG_TAG, "mMovieArrayList item 0: " + mMovieArrayList.get(0).getMovieTitle() + ", " + mMovieArrayList.get(0).getVideos());
+                // Log.v(LOG_TAG, "mMoviePosterAdapter item 0: " + mMoviePosterAdapter.getItem(0).getMovieTitle() + ", " + mMoviePosterAdapter.getItem(0).getVideos());
+            }
+            else {
+                Log.v(LOG_TAG, "movies was null???");
             }
         }
 
-        private URL getQueryURL(String sortOption) {
+        private URL getDiscoveryQueryUrl(String sortOption) {
 
-            final String LOG_TAG = "getQueryURL";
+            final String LOG_TAG = "getDiscoveryQueryUrl";
 
             try {
                 Uri.Builder builder = new Uri.Builder();
@@ -223,9 +229,9 @@ public class DiscoveryFragment extends Fragment {
 
         //Make API Call and read input
         //A lot of code here copied from Sunshine app
-        private String getMoviesData(URL queryURL) {
+        private String requestDataFromApi(URL queryURL) {
 
-            final String LOG_TAG = "getMoviesData()";
+            final String LOG_TAG = "requestDataFromApi()";
 
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -311,20 +317,20 @@ public class DiscoveryFragment extends Fragment {
             //for each movie in the JSON array, create a Movie object and store the relevant details
             for (int i = 0; i < moviesJsonArray.length(); i++) {
 
-                Movie movieObject = new Movie();
+                Movie movie = new Movie();
 
                 // Get the JSON object representing the movie
                 JSONObject movieJson = moviesJsonArray.getJSONObject(i);
 
                 //Set movie details to the movie object
-                movieObject.setMovieId(movieJson.getInt(TMDB_MOVIE_ID));
-                movieObject.setMovieTitle(movieJson.getString(TMDB_TITLE));
-                movieObject.setMoviePosterPath(movieJson.getString(TMDB_POSTER_PATH));
-                movieObject.setMovieSynopsis(movieJson.getString(TMDB_PLOT_SYNOPSIS));
-                movieObject.setMovieUserRating(movieJson.getDouble(TMDB_USER_RATING));
-                movieObject.setMovieReleaseDate(movieJson.getString(TMDB_RELEASE_DATE));
+                movie.setMovieId(movieJson.getInt(TMDB_MOVIE_ID));
+                movie.setMovieTitle(movieJson.getString(TMDB_TITLE));
+                movie.setMoviePosterPath(movieJson.getString(TMDB_POSTER_PATH));
+                movie.setMovieSynopsis(movieJson.getString(TMDB_PLOT_SYNOPSIS));
+                movie.setMovieUserRating(movieJson.getDouble(TMDB_USER_RATING));
+                movie.setMovieReleaseDate(movieJson.getString(TMDB_RELEASE_DATE));
 
-                moviesObjectArray[i] = movieObject;
+                moviesObjectArray[i] = movie;
 
                 //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
 
@@ -333,6 +339,69 @@ public class DiscoveryFragment extends Fragment {
             return moviesObjectArray;
         }
 
+        public URL getVideoQueryURL(int movieId) {
+            final String LOG_TAG = "getVideoQueryURL";
+
+            try {
+                Uri.Builder builder = new Uri.Builder();
+                builder.scheme("http")
+                        .authority("api.themoviedb.org")
+                        .appendPath("3")
+                        .appendPath("movie")
+                        .appendPath(String.valueOf(movieId))
+                        .appendPath("videos")
+                        .appendQueryParameter(getString(R.string.API_query_key), getString(R.string.API_param_key));
+
+                // Log.v(LOG_TAG, builder.build().toString());
+
+                return new URL(builder.build().toString());
+
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "Error ", e);
+                return null;
+            }
+        }
+
+
+        public void saveMovieVideoIds(Movie[] movies) throws JSONException {
+            try {
+
+                if (movies !=null) {
+
+                    final String TMDB_VIDEOS_LIST = "results";
+                    final String TMDB_VIDEO_KEY = "key";
+                    final String TMDB_VIDEO_NAME = "name";
+
+                    for (Movie movie : movies) {
+
+                        int movieID = movie.getMovieID();
+                        URL videoQueryURL = getVideoQueryURL(movieID);
+                        String videosQueryResponseStr = requestDataFromApi(videoQueryURL);
+
+                        JSONObject videosQueryResponseJson = new JSONObject(videosQueryResponseStr);
+                        JSONArray videosJsonArray = videosQueryResponseJson.getJSONArray(TMDB_VIDEOS_LIST);
+
+                        for (int i = 0; i < videosJsonArray.length(); i++ ) {
+
+                            JSONObject video = videosJsonArray.getJSONObject(i);
+
+                            String[] videoInfo = {
+                                    video.getString(TMDB_VIDEO_KEY),
+                                    video.getString(TMDB_VIDEO_NAME)
+                            };
+
+                            movie.addVideo(videoInfo);
+
+                            // Log.v(LOG_TAG, movie.getMovieTitle());
+                            // Log.v(LOG_TAG, movie.getVideos());
+                        }
+                    }
+                }
+
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, "Error ", e);
+            }
+        }
     }
 
     public void discoverByUserRating(){
@@ -345,6 +414,8 @@ public class DiscoveryFragment extends Fragment {
         moviesTask.execute(getString(R.string.API_param_descending_popularity));
     }
 
+    /* This was used back when movie discovery sort option was done as a sharedPrefs setting
+
     public void updateMovies(){
         FetchMoviesTask moviesTask = new FetchMoviesTask();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
@@ -352,4 +423,7 @@ public class DiscoveryFragment extends Fragment {
                 getString(R.string.API_param_descending_popularity));
         moviesTask.execute(sortBy);
     }
+
+    */
 }
+

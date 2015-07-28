@@ -3,11 +3,16 @@ package com.example.android.popularmovies;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
+
+import java.util.ArrayList;
 
 /**
  * Created by ranjeevmahtani on 7/10/15.
  */
 public class Movie implements Parcelable{
+
+    final String LOG_TAG = Movie.class.getSimpleName();
 
     private int id;
     private String title;
@@ -15,6 +20,8 @@ public class Movie implements Parcelable{
     private String synopsis;
     private double userRating;
     private String releaseDate;
+
+    private ArrayList<String[]> videos;
 
     public Movie(){
 
@@ -24,6 +31,7 @@ public class Movie implements Parcelable{
         this.synopsis = "unavailable";
         this.userRating = 0;
         this.releaseDate = "unavailable";
+        this.videos = new ArrayList<String[]>();
 
     }
 
@@ -86,6 +94,25 @@ public class Movie implements Parcelable{
         return builder.build().toString() + posterPath;
     }
 
+    /* Store information pertaining to videos related to this movie.
+     * Each video is represented by a 2-element String array where:
+     * the 1st element is the video Id and the 2nd element is the video name.
+     * For each video, the Id corresponds to the video's youTube Id
+     * the video's name is a simple descriptive name of the video
+     * The String arrays representing relevant videos are stored in an ArrayList<String[]> called videos
+     */
+    public void addVideo(String[] videoIdNamePair) {
+        if (videoIdNamePair != null && videoIdNamePair.length == 2){
+            this.videos.add(videoIdNamePair);
+        } else {
+            Log.e(LOG_TAG, "videoNamePair array was not of length 2");
+        }
+    }
+
+    public ArrayList<String[]> getVideos() {
+        return videos;
+    }
+
     public int describeContents(){
         return 0;
     }
@@ -97,6 +124,7 @@ public class Movie implements Parcelable{
         out.writeString(synopsis);
         out.writeDouble(userRating);
         out.writeString(releaseDate);
+        out.writeList(videos);
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
@@ -118,6 +146,7 @@ public class Movie implements Parcelable{
         synopsis = in.readString();
         userRating = in.readDouble();
         releaseDate = in.readString();
+        videos = (ArrayList<String[]>)in.readArrayList(null);
     }
 
 }

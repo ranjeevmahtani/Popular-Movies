@@ -33,7 +33,7 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
         // If not, this view already has the layout inflated from a previous call to getView,
         // and we modify the View widgets as usual.
         if (convertView == null) {
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.grid_item, parent, false);
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.discovery_grid_item, parent, false);
         }
 
         ImageView moviePosterView = (ImageView) convertView.findViewById(R.id.grid_item_movie_image);
@@ -41,6 +41,8 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
         String posterURLStr = movie.getPosterURL();
 
         Picasso.with(getContext()).load(posterURLStr).into(moviePosterView);
+
+        // Log.v(LOG_TAG, movie.getMovieTitle() + ", " + movie.getVideos());
 
         return convertView;
     }
