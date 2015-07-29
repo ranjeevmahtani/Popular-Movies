@@ -21,7 +21,11 @@ public class Movie implements Parcelable{
     private double userRating;
     private String releaseDate;
 
+    private boolean hasVideos;
+    private boolean hasReviews;
+
     private ArrayList<String[]> videos;
+    private ArrayList<String[]> reviews;
 
     public Movie(){
 
@@ -32,6 +36,9 @@ public class Movie implements Parcelable{
         this.userRating = 0;
         this.releaseDate = "unavailable";
         this.videos = new ArrayList<String[]>();
+        this.reviews = new ArrayList<String[]>();
+        this.hasVideos = false;
+        this.hasReviews = false;
 
     }
 
@@ -83,6 +90,14 @@ public class Movie implements Parcelable{
         return releaseDate;
     }
 
+    public boolean hasVideos() {
+        return hasVideos;
+    }
+
+    public boolean hasReviews() {
+        return hasReviews;
+    }
+
     public String getPosterURL(){
         Uri.Builder builder = new Uri.Builder();
         builder.scheme("http")
@@ -103,14 +118,49 @@ public class Movie implements Parcelable{
      */
     public void addVideo(String[] videoIdNamePair) {
         if (videoIdNamePair != null && videoIdNamePair.length == 2){
+            if (this.videos == null) {
+                this.videos = new ArrayList<String[]>();
+            }
             this.videos.add(videoIdNamePair);
-        } else {
+            if (!hasVideos()) {
+                this.hasVideos = true;
+            }
+        }
+        else {
             Log.e(LOG_TAG, "videoNamePair array was not of length 2");
         }
     }
 
     public ArrayList<String[]> getVideos() {
         return videos;
+    }
+
+    public void addReview(String[] review) {
+        if (review != null && review.length == 2){
+            if (this.reviews == null) {
+                this.reviews = new ArrayList<String[]>();
+            }
+            this.reviews.add(review);
+            if (!hasReviews()) {
+                this.hasReviews = true;
+            }
+        } else {
+            Log.e(LOG_TAG, "did not supply a 2-element array for the review");
+        }
+    }
+
+    public ArrayList<String[]> getReviews() {
+        return reviews;
+    }
+
+    public void setNoVideos() {
+        this.videos.clear();
+        this.hasReviews = false;
+    }
+
+    public void setNoReviews() {
+        this.reviews.clear();
+        this.hasReviews = false;
     }
 
     public int describeContents(){
@@ -125,6 +175,7 @@ public class Movie implements Parcelable{
         out.writeDouble(userRating);
         out.writeString(releaseDate);
         out.writeList(videos);
+        out.writeList(reviews);
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
@@ -147,6 +198,7 @@ public class Movie implements Parcelable{
         userRating = in.readDouble();
         releaseDate = in.readString();
         videos = (ArrayList<String[]>)in.readArrayList(null);
+        reviews = (ArrayList<String[]>)in.readArrayList(null);
     }
 
 }

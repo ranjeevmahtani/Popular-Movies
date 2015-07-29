@@ -340,7 +340,7 @@ public class DiscoveryFragment extends Fragment {
         }
 
         public URL getVideoQueryURL(int movieId) {
-            final String LOG_TAG = "getVideoQueryURL";
+            final String LOG_TAG = "getVideoQueryUrl";
 
             try {
                 Uri.Builder builder = new Uri.Builder();

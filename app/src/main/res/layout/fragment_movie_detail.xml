@@ -10,16 +10,17 @@
         android:id="@+id/movie_detail_linear_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="12dp">
 
         <TextView
             android:id="@+id/movie_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            android:background="#009688"
+            android:background="@color/material_deep_teal_500"
             android:textSize="24sp"
-            android:textColor="#FFFF"/>
+            android:textColor="@color/white"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -62,27 +63,10 @@
             android:id="@+id/movie_synopsis"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@android:color/darker_gray"
-            android:layout_marginLeft="12dp"
-            android:layout_marginRight="12dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="2dp"/>
-
-        <TextView
-            android:id="@+id/video_textview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:paddingLeft="12dp"
-            android:paddingRight="12dp"/>
+            android:paddingRight="12dp"
+            android:paddingTop="12dp"/>
 
     </LinearLayout>
-
-
-
 
 </ScrollView>

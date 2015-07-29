@@ -47,11 +47,6 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             mContainer = container;
             View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
             mLinearLayout = (LinearLayout) rootView.findViewById(R.id.movie_detail_linear_layout);
-            //mLinearLayout.setOnClickListener(this);
-
-            // Run AsyncTask to query API for videoIDs, save Ids to movie object, return video URIs,
-            // and populate views for videos into fragment.
-            new FetchMovieVideoLinks().execute(movie);
 
             ((TextView) (rootView.findViewById(R.id.movie_title))).setText(movie.getMovieTitle());
 
@@ -67,51 +62,74 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
             ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(movie.getMovieSynopsis());
 
+            // Run AsyncTask to query API for videoIDs, save Ids to movie object, return video URIs,
+            // and populate views for videos into fragment.
+            new FetchMovieVideosAndReviews().execute(movie);
+
             return rootView;
         }
 
         return null;
     }
 
-    public class FetchMovieVideoLinks extends AsyncTask<Movie, Void, ArrayList<String[]>> {
+    public class FetchMovieVideosAndReviews extends AsyncTask<Movie, Void, Movie> {
 
-        private final String LOG_TAG = FetchMovieVideoLinks.class.getSimpleName();
+        private final String LOG_TAG = FetchMovieVideosAndReviews.class.getSimpleName();
 
         @Override
-        protected ArrayList<String[]> doInBackground(Movie... params) {
+        protected Movie doInBackground(Movie... params) {
 
             Movie movie = params[0];
 
-            URL queryUrl = Utility.getVideoQueryURL(getActivity(), movie.getMovieID());
+            URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), movie.getMovieID());
+            URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), movie.getMovieID());
 
             try {
-                Utility.saveMovieVideoInfo(movie, queryUrl);
+                Utility.saveMovieVideoInfo(movie, videoQueryUrl);
                 //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage());
             }
 
-            return movie.getVideos();
+            try {
+                Utility.saveMovieReviews(movie, reviewQueryUrl);
+                //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, e.getMessage());
+            }
+
+            return movie;
         }
 
         @Override
-        protected void onPostExecute(ArrayList<String[]> videos) {
+        protected void onPostExecute(Movie movie) {
             // Log.v(LOG_TAG, "entered onPostExecute");
 
-            if (videos != null && videos.size() > 0) {
+            mLinearLayout.addView(createSectionDivider("Trailers and Videos"));
+            if (movie.hasVideos()) {
+                ArrayList<String[]> videos = movie.getVideos();
+                 for (String[] video : videos) {
+                     mLinearLayout.addView(createVideoView(video));
+                 }
+            } else {
+                mLinearLayout.addView(createNoContentAvailableView("videos"));
+            }
 
-                Log.v(LOG_TAG, "it's popcorn time!");
-
-                for (String[] video : videos) {
-                    mLinearLayout.addView(createVideoView(video));
+            mLinearLayout.addView(createSectionDivider("Reviews"));
+            if (movie.hasReviews()) {
+                ArrayList<String[]> reviews = movie.getReviews();
+                for (String[] review : reviews) {
+                    mLinearLayout.addView(createReviewView(review));
                 }
+            } else {
+                mLinearLayout.addView(createNoContentAvailableView("reviews"));
             }
         }
     }
 
     private View createVideoView(String[] video) {
 
-        View videoView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_videos_list_item, mContainer, false);
+        View videoView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_video_item, mContainer, false);
 
         ImageView videoIconBackground = (ImageView) videoView.findViewById(R.id.video_icon_background);
         TextView videoName = (TextView) videoView.findViewById(R.id.video_name);
@@ -123,6 +141,42 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         videoView.setOnClickListener(this);
 
         return videoView;
+    }
+
+    private View createReviewView(String[] review) {
+
+        View reviewView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_review_item, mContainer, false);
+
+        TextView reviewAuthor = (TextView) reviewView.findViewById(R.id.review_author);
+        TextView reviewContent = (TextView) reviewView.findViewById(R.id.review_content);
+
+        reviewAuthor.setText(review[0]);
+        reviewContent.setText(review[1]);
+
+        return reviewView;
+    }
+
+    private View createSectionDivider(String sectionName) {
+
+        View dividerView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_detail_divider, mContainer, false);
+
+        TextView sectionHeader = (TextView) dividerView.findViewById(R.id.section_header);
+        sectionHeader.setText(sectionName);
+
+        return dividerView;
+    }
+
+    private View createNoContentAvailableView(String desiredContent) {
+
+        String message = "There are no " + desiredContent + " for this movie.";
+
+        View noContentView = LayoutInflater.from(getActivity()).inflate(R.layout.no_content_view, mContainer, false);
+
+        TextView textView = (TextView)noContentView.findViewById(R.id.no_content_textview);
+
+        textView.setText(message);
+
+        return noContentView;
     }
 
     @Override

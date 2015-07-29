@@ -22,8 +22,8 @@ public class Utility {
 
     final static String LOG_TAG = Utility.class.getSimpleName();
 
-    public static URL getVideoQueryURL(Context context, int movieId) {
-        final String LOG_TAG = "getVideoQueryURL(...)";
+    public static URL getVideoQueryUrl(Context context, int movieId) {
+        final String LOG_TAG = "getVideoQueryUrl(...)";
 
         try {
             Uri.Builder builder = new Uri.Builder();
@@ -33,6 +33,29 @@ public class Utility {
                     .appendPath("movie")
                     .appendPath(String.valueOf(movieId))
                     .appendPath("videos")
+                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+
+            // Log.v(LOG_TAG, builder.build().toString());
+
+            return new URL(builder.build().toString());
+
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error ", e);
+            return null;
+        }
+    }
+
+    public static URL getReviewQueryUrl(Context context, int movieId) {
+        final String LOG_TAG = "getReviewQueryUrl(...)";
+
+        try {
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme("http")
+                    .authority("api.themoviedb.org")
+                    .appendPath("3")
+                    .appendPath("movie")
+                    .appendPath(String.valueOf(movieId))
+                    .appendPath("reviews")
                     .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
 
             // Log.v(LOG_TAG, builder.build().toString());
@@ -60,22 +83,73 @@ public class Utility {
                 JSONObject videosQueryResponseJson = new JSONObject(videosQueryResponseStr);
                 JSONArray videosJsonArray = videosQueryResponseJson.getJSONArray(TMDB_VIDEOS_LIST);
 
-                for (int i = 0; i < videosJsonArray.length(); i++) {
+                if(videosJsonArray.length() == 0) {
+                    movie.setNoVideos();
+                } else {
+                    for (int i = 0; i < videosJsonArray.length(); i++) {
 
-                    JSONObject video = videosJsonArray.getJSONObject(i);
+                        JSONObject video = videosJsonArray.getJSONObject(i);
 
-                    String[] videoInfo = {
-                            video.getString(TMDB_VIDEO_KEY),
-                            video.getString(TMDB_VIDEO_NAME)
-                    };
+                        String[] videoInfo = {
+                                video.getString(TMDB_VIDEO_KEY),
+                                video.getString(TMDB_VIDEO_NAME)
+                        };
 
-                    movie.addVideo(videoInfo);
+                        movie.addVideo(videoInfo);
 
-                    // Log.v(LOG_TAG, movie.getMovieTitle());
-                    // Log.v(LOG_TAG, movie.getVideos());
+                        // Log.v(LOG_TAG, movie.getMovieTitle());
+                        // Log.v(LOG_TAG, movie.getVideos());
+                    }
                 }
             } else {
-                Log.e(LOG_TAG, "No response from TMDB");
+                movie.setNoVideos();
+            }
+
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error ", e);
+        }
+    }
+
+    public static void saveMovieReviews(Movie movie, URL reviewsQueryUrl) throws JSONException {
+        final String LOG_TAG = "saveMovieReviews(...)";
+
+        try {
+            final String TMDB_REVIEWS_LIST = "results";
+            final String TMDB_REVIEW_AUTHOR = "author";
+            final String TMDB_REVIEW_CONTENT = "content";
+
+            String reviewsQueryResponseStr = requestDataFromApi(reviewsQueryUrl);
+
+            if (reviewsQueryResponseStr != null && !reviewsQueryResponseStr.equals("")) {
+
+                JSONObject reviewsQueryResponseJson = new JSONObject(reviewsQueryResponseStr);
+                JSONArray reviewsJsonArray = reviewsQueryResponseJson.getJSONArray(TMDB_REVIEWS_LIST);
+
+                if (reviewsJsonArray.length() == 0) {
+                    movie.setNoReviews();
+                } else {
+                    for (int i = 0; i < reviewsJsonArray.length(); i++) {
+
+                        JSONObject review = reviewsJsonArray.getJSONObject(i);
+
+                        String reviewAuthor = review.getString(TMDB_REVIEW_AUTHOR);
+                        if (reviewAuthor == null || reviewAuthor.equals("")) {
+                            reviewAuthor = "anonymous";
+                        }
+
+                        String[] reviewInfo = {
+                                reviewAuthor,
+                                review.getString(TMDB_REVIEW_CONTENT)
+                        };
+
+                        movie.addReview(reviewInfo);
+
+                        // Log.v(LOG_TAG, movie.getMovieTitle());
+                        // Log.v(LOG_TAG, movie.getVideos());
+                    }
+                }
+            } else {
+                movie.setNoReviews();
             }
 
         } catch (JSONException e) {
