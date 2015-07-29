@@ -45,8 +45,8 @@ public class Utility {
         }
     }
 
-    public static void saveMovieVideoIds(Movie movie, URL videoQueryUrl) throws JSONException {
-        final String LOG_TAG = "saveMovieVideoIds(...)";
+    public static void saveMovieVideoInfo(Movie movie, URL videoQueryUrl) throws JSONException {
+        final String LOG_TAG = "saveMovieVideoInfo(...)";
 
         try {
             final String TMDB_VIDEOS_LIST = "results";
@@ -148,7 +148,7 @@ public class Utility {
 
     public static Uri getVideoUri(String videoId) {
         final String YOUTUBE_BASE_URL = "http://youtube.com/watch?v=";
-        return Uri.parse(YOUTUBE_BASE_URL+videoId);
+        return Uri.parse(YOUTUBE_BASE_URL + videoId);
     }
 
 

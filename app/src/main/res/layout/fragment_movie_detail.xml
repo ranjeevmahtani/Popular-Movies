@@ -1,14 +1,16 @@
-<ScrollView  xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.android.popularmovies.MovieDetailFragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/movie_detail_linear_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical">
-
 
         <TextView
             android:id="@+id/movie_title"
@@ -30,7 +32,9 @@
                 tools:ignore="ContentDescription"
                 android:id="@+id/movie_thumbnail"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="180dp"
+                android:adjustViewBounds="true"
+                android:scaleType="centerCrop"/>
 
             <LinearLayout
                 android:orientation="vertical"
@@ -76,13 +80,9 @@
             android:paddingLeft="12dp"
             android:paddingRight="12dp"/>
 
-        <ListView
-            android:id="@+id/movie_videos_listview"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-        </ListView>
-
     </LinearLayout>
+
+
+
 
 </ScrollView>

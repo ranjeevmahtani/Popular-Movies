@@ -172,7 +172,7 @@ public class DiscoveryFragment extends Fragment {
 
             try {
                 movies = getMovieArrayFromJsonStr(moviesJsonStr);
-                // saveMovieVideoIds(movies);
+                // saveMovieVideoInfo(movies);
                 // Log.v(LOG_TAG, movies[0].getMovieTitle() + ", " + movies[0].getVideos());
                 return movies;
             } catch (JSONException e) {

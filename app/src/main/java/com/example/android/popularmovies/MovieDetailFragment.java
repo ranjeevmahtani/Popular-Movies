@@ -9,9 +9,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -25,62 +24,52 @@ import java.util.ArrayList;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class MovieDetailFragment extends Fragment {
+public class MovieDetailFragment extends Fragment implements View.OnClickListener {
 
     private static final String LOG_TAG = MovieDetailFragment.class.getSimpleName();
+    private static final int VIDEO_ID_TAG = 100;
+    private static String sPosterUrlStr;
 
-    private MovieVideosAdapter mMovieVideosAdapter;
-    static String sPosterUrlStr;
+    private LinearLayout mLinearLayout;
 
-    public MovieDetailFragment() {}
+    public MovieDetailFragment() {
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
-
         Intent intent = getActivity().getIntent();
-        if (intent != null && intent.hasExtra("movie")){
+
+        if (intent != null && intent.hasExtra("movie")) {
             Movie movie = (intent.getParcelableExtra("movie"));
 
-            ((TextView)(rootView.findViewById(R.id.movie_title))).setText(movie.getMovieTitle());
+            View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
+            mLinearLayout = (LinearLayout) rootView.findViewById(R.id.movie_detail_linear_layout);
+            //mLinearLayout.setOnClickListener(this);
 
-            ImageView imageView = (ImageView)(rootView.findViewById(R.id.movie_thumbnail));
+            // Run AsyncTask to query API for videoIDs, save Ids to movie object, return video URIs,
+            // and populate views for videos into fragment.
+            new FetchMovieVideoLinks().execute(movie);
+
+            ((TextView) (rootView.findViewById(R.id.movie_title))).setText(movie.getMovieTitle());
+
+            ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
             sPosterUrlStr = movie.getPosterURL();
             Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
 
-            ((TextView)(rootView.findViewById(R.id.movie_release_date))).setText(movie.getMovieReleaseDate());
+            ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText("Release Date: " + movie.getMovieReleaseDate());
 
-            ((TextView)(rootView.findViewById(R.id.movie_rating)))
+            ((TextView) (rootView.findViewById(R.id.movie_rating)))
                     .setText
-                            (String.valueOf(movie.getMovieUserRating()) + "/10");
+                            ("Viewer Rating: " + String.valueOf(movie.getMovieUserRating()) + "/10");
 
-            ((TextView)(rootView.findViewById(R.id.movie_synopsis))).setText(movie.getMovieSynopsis());
+            ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(movie.getMovieSynopsis());
 
-            mMovieVideosAdapter = new MovieVideosAdapter(getActivity(), new ArrayList<String[]>());
-
-            AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-                    String videoId = mMovieVideosAdapter.getItem(position)[0];
-                    Uri videoUri = Utility.getVideoUri(videoId);
-                    Intent intent = new Intent(Intent.ACTION_VIEW).setData(videoUri);
-                    startActivity(intent);
-                }
-            };
-
-            ListView videoListView = (ListView)(rootView.findViewById(R.id.movie_videos_listview));
-
-            videoListView.setAdapter(mMovieVideosAdapter);
-
-            videoListView.setOnItemClickListener(itemClickListener);
-
-            new FetchMovieVideoLinks().execute(movie);
+            return rootView;
         }
 
-        return rootView;
-
+        return null;
     }
 
     public class FetchMovieVideoLinks extends AsyncTask<Movie, Void, ArrayList<String[]>> {
@@ -95,7 +84,8 @@ public class MovieDetailFragment extends Fragment {
             URL queryUrl = Utility.getVideoQueryURL(getActivity(), movie.getMovieID());
 
             try {
-                Utility.saveMovieVideoIds(movie, queryUrl);
+                Utility.saveMovieVideoInfo(movie, queryUrl);
+                //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage());
             }
@@ -106,9 +96,43 @@ public class MovieDetailFragment extends Fragment {
         @Override
         protected void onPostExecute(ArrayList<String[]> videos) {
             // Log.v(LOG_TAG, "entered onPostExecute");
-            mMovieVideosAdapter.clear();
-            mMovieVideosAdapter.addAll(videos);
-            mMovieVideosAdapter.notifyDataSetChanged();
+
+            if (videos != null && videos.size() > 0) {
+
+                Log.v(LOG_TAG, "it's popcorn time!");
+
+                for (String[] video : videos) {
+                    //View videoView = createVideoView(video);
+                    //videoView.setOnClickListener((View.OnClickListener)getParentFragment());
+                    mLinearLayout.addView(createVideoView(video));
+                }
+            }
         }
+
+        private View createVideoView(String[] video) {
+
+            View videoView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_videos_list_item, null, false);
+
+            ImageView videoIconBackground = (ImageView) videoView.findViewById(R.id.video_icon_background);
+            TextView videoName = (TextView) videoView.findViewById(R.id.video_name);
+
+            Picasso.with(getActivity()).load(sPosterUrlStr).into(videoIconBackground);
+            videoName.setText(video[1]);
+            videoView.setTag(video[0]);
+
+            videoView.setOnClickListener((View.OnClickListener)getParentFragment());
+
+            return videoView;
+        }
+    }
+
+    @Override
+    public void onClick(View videoView) {
+        String videoId = (String)videoView.getTag();
+        Log.v(LOG_TAG, "item clicked: " + videoId);
+
+        Uri videoUri = Utility.getVideoUri(videoId);
+        Intent intent = new Intent(Intent.ACTION_VIEW).setData(videoUri);
+        startActivity(intent);
     }
 }
