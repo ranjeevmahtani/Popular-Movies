@@ -27,10 +27,10 @@ import java.util.ArrayList;
 public class MovieDetailFragment extends Fragment implements View.OnClickListener {
 
     private static final String LOG_TAG = MovieDetailFragment.class.getSimpleName();
-    private static final int VIDEO_ID_TAG = 100;
     private static String sPosterUrlStr;
 
     private LinearLayout mLinearLayout;
+    private ViewGroup mContainer;
 
     public MovieDetailFragment() {
     }
@@ -44,6 +44,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         if (intent != null && intent.hasExtra("movie")) {
             Movie movie = (intent.getParcelableExtra("movie"));
 
+            mContainer = container;
             View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
             mLinearLayout = (LinearLayout) rootView.findViewById(R.id.movie_detail_linear_layout);
             //mLinearLayout.setOnClickListener(this);
@@ -102,28 +103,26 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 Log.v(LOG_TAG, "it's popcorn time!");
 
                 for (String[] video : videos) {
-                    //View videoView = createVideoView(video);
-                    //videoView.setOnClickListener((View.OnClickListener)getParentFragment());
                     mLinearLayout.addView(createVideoView(video));
                 }
             }
         }
+    }
 
-        private View createVideoView(String[] video) {
+    private View createVideoView(String[] video) {
 
-            View videoView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_videos_list_item, null, false);
+        View videoView = LayoutInflater.from(getActivity()).inflate(R.layout.movie_videos_list_item, mContainer, false);
 
-            ImageView videoIconBackground = (ImageView) videoView.findViewById(R.id.video_icon_background);
-            TextView videoName = (TextView) videoView.findViewById(R.id.video_name);
+        ImageView videoIconBackground = (ImageView) videoView.findViewById(R.id.video_icon_background);
+        TextView videoName = (TextView) videoView.findViewById(R.id.video_name);
 
-            Picasso.with(getActivity()).load(sPosterUrlStr).into(videoIconBackground);
-            videoName.setText(video[1]);
-            videoView.setTag(video[0]);
+        Picasso.with(getActivity()).load(sPosterUrlStr).into(videoIconBackground);
+        videoName.setText(video[1]);
+        videoView.setTag(video[0]);
 
-            videoView.setOnClickListener((View.OnClickListener)getParentFragment());
+        videoView.setOnClickListener(this);
 
-            return videoView;
-        }
+        return videoView;
     }
 
     @Override
