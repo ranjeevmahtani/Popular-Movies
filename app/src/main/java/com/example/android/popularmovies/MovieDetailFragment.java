@@ -31,6 +31,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
     private LinearLayout mLinearLayout;
     private ViewGroup mContainer;
+    private Movie mMovie;
 
     public MovieDetailFragment() {
     }
@@ -39,91 +40,113 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        Intent intent = getActivity().getIntent();
+        if(savedInstanceState == null || savedInstanceState.getParcelable("movie") == null) {
 
-        if (intent != null && intent.hasExtra("movie")) {
-            Movie movie = (intent.getParcelableExtra("movie"));
-
-            mContainer = container;
-            View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
-            mLinearLayout = (LinearLayout) rootView.findViewById(R.id.movie_detail_linear_layout);
-
-            ((TextView) (rootView.findViewById(R.id.movie_title))).setText(movie.getMovieTitle());
-
-            ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
-            sPosterUrlStr = movie.getPosterURL();
-            Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
-
-            ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText("Release Date: " + movie.getMovieReleaseDate());
-
-            ((TextView) (rootView.findViewById(R.id.movie_rating)))
-                    .setText
-                            ("Viewer Rating: " + String.valueOf(movie.getMovieUserRating()) + "/10");
-
-            ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(movie.getMovieSynopsis());
-
-            // Run AsyncTask to query API for videoIDs, save Ids to movie object, return video URIs,
-            // and populate views for videos into fragment.
-            new FetchMovieVideosAndReviews().execute(movie);
-
-            return rootView;
+            Intent intent = getActivity().getIntent();
+            if (intent != null && intent.hasExtra("movie")) {
+                mMovie = intent.getParcelableExtra("movie");
+            } else {
+                Log.e(LOG_TAG, "No Movie object found when launching fragment");
+                return null;
+            }
+        } else {
+            mMovie = savedInstanceState.getParcelable("movie");
         }
 
-        return null;
+        mContainer = container;
+        View rootView = inflater.inflate(R.layout.fragment_movie_detail, container, false);
+        mLinearLayout = (LinearLayout) rootView.findViewById(R.id.movie_detail_linear_layout);
+
+        ((TextView) (rootView.findViewById(R.id.movie_title))).setText(mMovie.getMovieTitle());
+
+        ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
+        sPosterUrlStr = mMovie.getPosterURL();
+        Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
+
+        ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText("Release Date: " + mMovie.getMovieReleaseDate());
+
+        ((TextView) (rootView.findViewById(R.id.movie_rating)))
+                .setText
+                        ("Viewer Rating: " + String.valueOf(mMovie.getMovieUserRating()) + "/10");
+
+        ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(mMovie.getMovieSynopsis());
+
+        // Run AsyncTask to query API for videos and reviews if the movie doesn't already have them,
+        // and populate views for videos and reviews into fragment.
+
+        if (!mMovie.hasVideos() || !mMovie.hasReviews()) {
+
+            Log.v(LOG_TAG, "Fetching videos and reviews...");
+            new FetchMovieVideosAndReviews().execute();
+
+        } else {
+
+            loadVideoViews(mMovie);
+            loadReviewViews(mMovie);
+
+        }
+
+        return rootView;
     }
 
-    public class FetchMovieVideosAndReviews extends AsyncTask<Movie, Void, Movie> {
+    public class FetchMovieVideosAndReviews extends AsyncTask<String, Void, Void> {
 
         private final String LOG_TAG = FetchMovieVideosAndReviews.class.getSimpleName();
 
         @Override
-        protected Movie doInBackground(Movie... params) {
+        protected Void doInBackground(String... params) {
 
-            Movie movie = params[0];
+            if (!mMovie.hasVideos()) {
+                URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getMovieID());
 
-            URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), movie.getMovieID());
-            URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), movie.getMovieID());
-
-            try {
-                Utility.saveMovieVideoInfo(movie, videoQueryUrl);
-                //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
-            } catch (JSONException e) {
-                Log.e(LOG_TAG, e.getMessage());
+                try {
+                    Utility.saveMovieVideoInfo(mMovie, videoQueryUrl);
+                    //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
+                } catch (JSONException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                }
             }
 
-            try {
-                Utility.saveMovieReviews(movie, reviewQueryUrl);
-                //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
-            } catch (JSONException e) {
-                Log.e(LOG_TAG, e.getMessage());
+            if (!mMovie.hasReviews()) {
+                URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getMovieID());
+                try {
+                    Utility.saveMovieReviews(mMovie, reviewQueryUrl);
+                    //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
+                } catch (JSONException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                }
             }
-
-            return movie;
+            return null;
         }
 
         @Override
-        protected void onPostExecute(Movie movie) {
-            // Log.v(LOG_TAG, "entered onPostExecute");
+        protected void onPostExecute(Void result) {
+            loadVideoViews(mMovie);
+            loadReviewViews(mMovie);
+        }
+    }
 
-            mLinearLayout.addView(createSectionDivider("Trailers and Videos"));
-            if (movie.hasVideos()) {
-                ArrayList<String[]> videos = movie.getVideos();
-                 for (String[] video : videos) {
-                     mLinearLayout.addView(createVideoView(video));
-                 }
-            } else {
-                mLinearLayout.addView(createNoContentAvailableView("videos"));
+    private void loadVideoViews(Movie movie) {
+        mLinearLayout.addView(createSectionDivider("Trailers and Videos"));
+        if (movie.hasVideos()) {
+            ArrayList<String[]> videos = movie.getVideos();
+            for (String[] video : videos) {
+                mLinearLayout.addView(createVideoView(video));
             }
+        } else {
+            mLinearLayout.addView(createNoContentAvailableView("videos"));
+        }
+    }
 
-            mLinearLayout.addView(createSectionDivider("Reviews"));
-            if (movie.hasReviews()) {
-                ArrayList<String[]> reviews = movie.getReviews();
-                for (String[] review : reviews) {
-                    mLinearLayout.addView(createReviewView(review));
-                }
-            } else {
-                mLinearLayout.addView(createNoContentAvailableView("reviews"));
+    private void loadReviewViews(Movie movie) {
+        mLinearLayout.addView(createSectionDivider("Reviews"));
+        if (movie.hasReviews()) {
+            ArrayList<String[]> reviews = movie.getReviews();
+            for (String[] review : reviews) {
+                mLinearLayout.addView(createReviewView(review));
             }
+        } else {
+            mLinearLayout.addView(createNoContentAvailableView("reviews"));
         }
     }
 
@@ -177,6 +200,16 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         textView.setText(message);
 
         return noContentView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+
+        if (mMovie != null) {
+            outState.putParcelable("movie", mMovie);
+        }
+
+        super.onSaveInstanceState(outState);
     }
 
     @Override

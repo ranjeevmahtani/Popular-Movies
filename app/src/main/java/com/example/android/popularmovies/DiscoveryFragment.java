@@ -71,7 +71,7 @@ public class DiscoveryFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
                 Parcelable movie = mMoviePosterAdapter.getItem(position);
-                Intent intent = new Intent(getActivity(), MovieDetail.class)
+                Intent intent = new Intent(getActivity(), MovieDetailActivity.class)
                         .putExtra("movie",movie);
                 startActivity(intent);
             }

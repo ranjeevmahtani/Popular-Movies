@@ -37,8 +37,8 @@ public class Movie implements Parcelable{
         this.releaseDate = "unavailable";
         this.videos = new ArrayList<String[]>();
         this.reviews = new ArrayList<String[]>();
-        this.hasVideos = false;
-        this.hasReviews = false;
+        setNoVideos();
+        setNoReviews();
 
     }
 
