@@ -42,14 +42,22 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         if(savedInstanceState == null || savedInstanceState.getParcelable("movie") == null) {
 
+            Log.v(LOG_TAG, "savedInstanceState was null or did not contain a movie");
+
             Intent intent = getActivity().getIntent();
             if (intent != null && intent.hasExtra("movie")) {
+
+                Log.v(LOG_TAG, "getting mMovie from intent");
                 mMovie = intent.getParcelableExtra("movie");
+
             } else {
+
                 Log.e(LOG_TAG, "No Movie object found when launching fragment");
                 return null;
             }
         } else {
+
+            Log.v(LOG_TAG, "savedInstanceState existed and contained a movie. Using that one as mMovie.");
             mMovie = savedInstanceState.getParcelable("movie");
         }
 
@@ -63,10 +71,10 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         sPosterUrlStr = mMovie.getPosterURL();
         Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
 
-        ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText("Release Date: " + mMovie.getMovieReleaseDate());
+        ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText(
+                "Release Date: " + mMovie.getMovieReleaseDate());
 
-        ((TextView) (rootView.findViewById(R.id.movie_rating)))
-                .setText
+        ((TextView) (rootView.findViewById(R.id.movie_rating))).setText
                         ("Viewer Rating: " + String.valueOf(mMovie.getMovieUserRating()) + "/10");
 
         ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(mMovie.getMovieSynopsis());
@@ -76,7 +84,9 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         if (!mMovie.hasVideos() || !mMovie.hasReviews()) {
 
-            Log.v(LOG_TAG, "Fetching videos and reviews...");
+            Log.v(LOG_TAG, "mMovie.hasVideos(): " + String.valueOf(mMovie.hasVideos()));
+            Log.v(LOG_TAG, "mMovie.hasReviews(): " + String.valueOf(mMovie.hasReviews()));
+
             new FetchMovieVideosAndReviews().execute();
 
         } else {
@@ -100,8 +110,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getMovieID());
 
                 try {
+                    //Log.v(LOG_TAG, "Attempting to query and save videos");
                     Utility.saveMovieVideoInfo(mMovie, videoQueryUrl);
-                    //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
                 } catch (JSONException e) {
                     Log.e(LOG_TAG, e.getMessage());
                 }
@@ -110,8 +120,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             if (!mMovie.hasReviews()) {
                 URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getMovieID());
                 try {
+                    //Log.v(LOG_TAG, "Attempting to query and save reviews");
                     Utility.saveMovieReviews(mMovie, reviewQueryUrl);
-                    //Log.v(LOG_TAG, movie.getVideos().get(0)[1] + ": " + movie.getVideos().get(0)[0]);
                 } catch (JSONException e) {
                     Log.e(LOG_TAG, e.getMessage());
                 }
