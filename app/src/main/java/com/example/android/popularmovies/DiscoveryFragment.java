@@ -2,7 +2,6 @@ package com.example.android.popularmovies;
 
 
 import android.app.Fragment;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -70,10 +69,15 @@ public class DiscoveryFragment extends Fragment {
         AdapterView.OnItemClickListener itemClickListener = new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-                Parcelable movie = mMoviePosterAdapter.getItem(position);
-                Intent intent = new Intent(getActivity(), MovieDetailActivity.class)
-                        .putExtra("movie",movie);
-                startActivity(intent);
+
+                Movie movie = (Movie) adapterView.getItemAtPosition(position);
+                if (movie !=null) {
+                    ((Callback) getActivity()).onItemSelected(movie);
+                }
+//                Parcelable movie = mMoviePosterAdapter.getItem(position);
+//                Intent intent = new Intent(getActivity(), MovieDetailActivity.class)
+//                        .putExtra("movie",movie);
+//                startActivity(intent);
             }
         };
 
@@ -414,16 +418,8 @@ public class DiscoveryFragment extends Fragment {
         moviesTask.execute(getString(R.string.API_param_descending_popularity));
     }
 
-    /* This was used back when movie discovery sort option was done as a sharedPrefs setting
-
-    public void updateMovies(){
-        FetchMoviesTask moviesTask = new FetchMoviesTask();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String sortBy = prefs.getString(getString(R.string.sort_by_key),
-                getString(R.string.API_param_descending_popularity));
-        moviesTask.execute(sortBy);
+    public interface Callback  {
+        void onItemSelected(Movie movie);
     }
-
-    */
 }
 

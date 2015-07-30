@@ -44,14 +44,11 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
             Log.v(LOG_TAG, "savedInstanceState was null or did not contain a movie");
 
-            Intent intent = getActivity().getIntent();
-            if (intent != null && intent.hasExtra("movie")) {
-
-                Log.v(LOG_TAG, "getting mMovie from intent");
-                mMovie = intent.getParcelableExtra("movie");
+            Bundle arguments = getArguments();
+            if(arguments!=null && arguments.getParcelable("movie") != null) {
+                mMovie = arguments.getParcelable("movie");
 
             } else {
-
                 Log.e(LOG_TAG, "No Movie object found when launching fragment");
                 return null;
             }
