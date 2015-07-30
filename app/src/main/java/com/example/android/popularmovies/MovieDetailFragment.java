@@ -225,7 +225,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     @Override
     public void onClick(View videoView) {
         String videoId = (String)videoView.getTag();
-        Log.v(LOG_TAG, "item clicked: " + videoId);
+        // Log.v(LOG_TAG, "item clicked: " + videoId);
 
         Uri videoUri = Utility.getVideoUri(videoId);
         Intent intent = new Intent(Intent.ACTION_VIEW).setData(videoUri);
