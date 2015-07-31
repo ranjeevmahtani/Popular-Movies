@@ -5,8 +5,13 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -33,7 +38,35 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     private ViewGroup mContainer;
     private Movie mMovie;
 
+    private ShareActionProvider mShareActionProvider;
+    private String mShareVideoUrlStr;
+
     public MovieDetailFragment() {
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
+        inflater.inflate(R.menu.menu_movie_detail, menu);
+
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+
+        if (mShareVideoUrlStr != null) {
+            mShareActionProvider.setShareIntent(createShareVideoIntent());
+        }
+
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    private Intent createShareVideoIntent() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mShareVideoUrlStr);
+        return shareIntent;
     }
 
     @Override
@@ -92,7 +125,6 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             loadReviewViews(mMovie);
 
         }
-
         return rootView;
     }
 
@@ -140,6 +172,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             for (String[] video : videos) {
                 mLinearLayout.addView(createVideoView(video));
             }
+            mShareVideoUrlStr = (Utility.getVideoUri(videos.get(0)[0])).toString();
+            mShareActionProvider.setShareIntent(createShareVideoIntent());
         } else {
             mLinearLayout.addView(createNoContentAvailableView("videos"));
         }

@@ -6,6 +6,7 @@
     <string name="action_discover_by_popularity">Discover by Popularity</string>
     <string name="action_discover_by_user_rating">Discover by User Rating</string>
     <string name="action_settings">Settings</string>
+    <string name="action_share">Share</string>
 
     <string name="image_base_URL">http://image.tmdb.org/t/p/</string>
     <string name="image_size_parameter">w185</string>
