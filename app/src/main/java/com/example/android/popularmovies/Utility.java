@@ -22,7 +22,7 @@ public class Utility {
 
     final static String LOG_TAG = Utility.class.getSimpleName();
 
-    public static URL getVideoQueryUrl(Context context, int movieId) {
+    public static URL getVideoQueryUrl(Context context, long movieId) {
         final String LOG_TAG = "getVideoQueryUrl(...)";
 
         try {
@@ -45,7 +45,7 @@ public class Utility {
         }
     }
 
-    public static URL getReviewQueryUrl(Context context, int movieId) {
+    public static URL getReviewQueryUrl(Context context, long movieId) {
         final String LOG_TAG = "getReviewQueryUrl(...)";
 
         try {

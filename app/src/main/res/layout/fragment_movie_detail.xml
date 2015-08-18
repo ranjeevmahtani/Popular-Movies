@@ -13,14 +13,42 @@
         android:orientation="vertical"
         android:paddingBottom="12dp">
 
-        <TextView
-            android:id="@+id/movie_title"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:background="@color/material_deep_teal_500"
-            android:textSize="24sp"
-            android:textColor="@color/white"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/material_deep_teal_500">
+
+            <TextView
+                android:id="@+id/movie_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:textSize="24sp"
+                android:textColor="@color/white"/>
+
+            <!--<Button-->
+                <!--android:id="@+id/favorite_test_button"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content"-->
+                <!--android:text="favorite" />-->
+
+            <ToggleButton
+                android:id="@+id/favorite_toggle_button"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginRight="16dp"
+                android:layout_gravity="center_vertical"
+                android:button="@drawable/favorite_toggle_selector"
+                android:background="@null"
+                android:disabledAlpha="?android:attr/disabledAlpha"
+                android:textOn=""
+                android:textOff=""/>
+
+
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"

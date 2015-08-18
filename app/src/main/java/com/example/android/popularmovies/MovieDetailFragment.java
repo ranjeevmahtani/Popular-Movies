@@ -1,6 +1,7 @@
 package com.example.android.popularmovies;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,10 +15,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
+import com.example.android.popularmovies.data.MovieContract;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
@@ -97,7 +101,71 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         ((TextView) (rootView.findViewById(R.id.movie_title))).setText(mMovie.getMovieTitle());
 
-        ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
+        ToggleButton toggle = (ToggleButton) rootView.findViewById(R.id.favorite_toggle_button);
+
+        Cursor cursor = getActivity().getContentResolver().query(
+                MovieContract.MovieEntry.CONTENT_URI,
+                new String[]{MovieContract.MovieEntry._ID},
+                MovieContract.MovieEntry.COLUMN_TMDB_ID + "= ?",
+                new String[]{String.valueOf(mMovie.getTmdbId())},
+                null,
+                null);
+
+        if (cursor.moveToFirst()) {
+            toggle.setChecked(true);
+        } else {
+            toggle.setChecked(false);
+        }
+
+        cursor.close();
+
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+
+                    mMovie.addToFavorites(getActivity());
+
+                    Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
+
+                    Cursor cursor = getActivity().getContentResolver().query(
+                            MovieContract.MovieEntry.CONTENT_URI,
+                            new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                            null,
+                            null,
+                            null);
+                    String favoriteTitles = "";
+                    if (cursor.moveToFirst()) {
+                        favoriteTitles = cursor.getString(0);
+                    }
+                    while (cursor.moveToNext()) {
+                        favoriteTitles += " " + cursor.getString(0);
+                    }
+                    cursor.close();
+                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
+
+                } else {
+                    mMovie.removeFromFavorites(getActivity());
+
+                    Cursor cursor = getActivity().getContentResolver().query(
+                            MovieContract.MovieEntry.CONTENT_URI,
+                            new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                            null,
+                            null,
+                            null);
+                    String favoriteTitles = "";
+                    if (cursor.moveToFirst()) {
+                        favoriteTitles = cursor.getString(0);
+                    }
+                    while (cursor.moveToNext()) {
+                        favoriteTitles += " " + cursor.getString(0);
+                    }
+                    cursor.close();
+                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
+                }
+            }
+        });
+
+                ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
         sPosterUrlStr = mMovie.getPosterURL();
         Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
 
@@ -125,6 +193,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             loadReviewViews(mMovie);
 
         }
+
         return rootView;
     }
 
@@ -172,8 +241,10 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             for (String[] video : videos) {
                 mLinearLayout.addView(createVideoView(video));
             }
-            mShareVideoUrlStr = (Utility.getVideoUri(videos.get(0)[0])).toString();
-            mShareActionProvider.setShareIntent(createShareVideoIntent());
+            if (mShareActionProvider != null) {
+                mShareVideoUrlStr = (Utility.getVideoUri(videos.get(0)[0])).toString();
+                mShareActionProvider.setShareIntent(createShareVideoIntent());
+            }
         } else {
             mLinearLayout.addView(createNoContentAvailableView("videos"));
         }
@@ -230,9 +301,9 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         return dividerView;
     }
 
-    private View createNoContentAvailableView(String desiredContent) {
+    private View createNoContentAvailableView(String desiredContentType) {
 
-        String message = "There are no " + desiredContent + " for this movie.";
+        String message = "There are no " + desiredContentType + " for this movie.";
 
         View noContentView = LayoutInflater.from(getActivity()).inflate(R.layout.no_content_view, mContainer, false);
 

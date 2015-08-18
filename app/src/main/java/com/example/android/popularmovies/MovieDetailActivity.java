@@ -34,4 +34,5 @@ public class MovieDetailActivity extends ActionBarActivity {
             }
         }
     }
+
 }

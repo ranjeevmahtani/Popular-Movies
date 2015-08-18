@@ -58,6 +58,7 @@ public class MainActivity extends ActionBarActivity implements DiscoveryFragment
         return super.onOptionsItemSelected(item);
     }
 
+    // Callback method to handle movie item selections in discovery fragment
     public void onItemSelected(Movie movie) {
 
         if (!mTwoPane) {
