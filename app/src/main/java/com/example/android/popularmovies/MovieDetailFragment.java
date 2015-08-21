@@ -37,6 +37,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
     private static final String LOG_TAG = MovieDetailFragment.class.getSimpleName();
     private static String sPosterUrlStr;
+    static final String MOVIE_URI_KEY = "movieURI";
+    static final String MOVIE_PARCELABLE_KEY = "movieParcelableKey";
 
     private LinearLayout mLinearLayout;
     private ViewGroup mContainer;
@@ -77,22 +79,137 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        if(savedInstanceState == null || savedInstanceState.getParcelable("movie") == null) {
+        if(savedInstanceState == null || savedInstanceState.getParcelable(MOVIE_PARCELABLE_KEY) == null) {
 
-            Log.v(LOG_TAG, "savedInstanceState was null or did not contain a movie");
+            Log.d(LOG_TAG, "savedInstanceState was null or did not contain a movie object");
 
             Bundle arguments = getArguments();
-            if(arguments!=null && arguments.getParcelable("movie") != null) {
-                mMovie = arguments.getParcelable("movie");
+            if(arguments!=null && arguments.getParcelable(MOVIE_PARCELABLE_KEY) != null) {
+                Log.d(LOG_TAG, "bundle contains a parceled movie object. easy");
+                mMovie = arguments.getParcelable(MOVIE_PARCELABLE_KEY);
+
+            } else if (arguments != null && arguments.getParcelable(MOVIE_URI_KEY) != null ) {
+                Log.d(LOG_TAG, "bundle contained the URI for a favorited movie");
+                Log.d(LOG_TAG, "creating a movie object from info obtained via db query");
+
+                final String[] movieProjection = {
+                        MovieContract.FavoritesEntry.COLUMN_TMDB_ID,
+                        MovieContract.FavoritesEntry.COLUMN_TITLE,
+                        MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS,
+                        MovieContract.FavoritesEntry.COLUMN_POSTER_PATH,
+                        MovieContract.FavoritesEntry.COLUMN_RATING,
+                        MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE,
+                };
+                final int TMDB_ID_IDX = 0;
+                final int TITLE_IDX = 1;
+                final int SYNOPSIS_IDX = 2;
+                final int POSTER_PATH_IDX = 3;
+                final int RATING_IDX = 4;
+                final int RELEASE_DATE_IDX = 5;
+
+                Uri movieUri = arguments.getParcelable(MOVIE_URI_KEY);
+                long favoriteMovie_id = MovieContract.FavoritesEntry.getMovieIdFromUri(movieUri);
+                Cursor movieCursor = getActivity().getContentResolver().query(
+                        MovieContract.FavoritesEntry.CONTENT_URI,
+                        movieProjection,
+                        MovieContract.FavoritesEntry._ID + "=?",
+                        new String[]{String.valueOf(favoriteMovie_id)},
+                        null);
+                if (movieCursor.moveToFirst()) {
+                    //create the movie object and set it's basic values
+                    mMovie = new Movie();
+                    mMovie.setMovieTitle(movieCursor.getString(TITLE_IDX));
+                    mMovie.setMoviePosterPath(movieCursor.getString(POSTER_PATH_IDX));
+                    mMovie.setMovieReleaseDate(movieCursor.getString(RELEASE_DATE_IDX));
+                    mMovie.setMovieSynopsis(movieCursor.getString(SYNOPSIS_IDX));
+                    mMovie.setTmdbId(movieCursor.getInt(TMDB_ID_IDX));
+                    mMovie.setMovieUserRating(movieCursor.getDouble(RATING_IDX));
+
+                    movieCursor.close();
+
+                    // get videos and reviews from db if they exist and add them to the movie
+                    final String[] videoProjection = new String[] {
+                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY,
+                            MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY,
+                            MovieContract.VideoEntry.COLUMN_NAME
+                    };
+                    final int MOVIE_KEY_IDX = 0;
+                    final int YOUTUBE_KEY_IDX = 1;
+                    final int NAME_IDX = 2;
+
+                    Cursor videosCursor = getActivity().getContentResolver().query(
+                            MovieContract.VideoEntry.CONTENT_URI,
+                            videoProjection,
+                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY +"=?",
+                            new String[]{String.valueOf(mMovie.getTmdbId())},
+                            null
+                    );
+                    if (videosCursor.moveToFirst()) {
+                        Log.d(LOG_TAG, "found a video for this favorite movie in the db");
+                        mMovie.addVideo(new String[]{
+                                videosCursor.getString(YOUTUBE_KEY_IDX),
+                                videosCursor.getString(NAME_IDX)
+                        });
+                        while (videosCursor.moveToNext()) {
+                            mMovie.addVideo(new String[]{
+                                    videosCursor.getString(YOUTUBE_KEY_IDX),
+                                    videosCursor.getString(NAME_IDX)
+                            });
+                        }
+                    } else {
+                        Log.d(LOG_TAG, "did not find a video for this favorite movie in the db");
+                    }
+                    videosCursor.close();
+
+                    final String[] reviewProjection = new String[] {
+                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY,
+                            MovieContract.ReviewEntry.COLUMN_AUTHOR,
+                            MovieContract.ReviewEntry.COLUMN_CONTENT
+                    };
+
+                    final int AUTHOR_IDX = 1;
+                    final int CONTENT_IDX = 2;
+
+                    Cursor reviewsCursor = getActivity().getContentResolver().query(
+                            MovieContract.ReviewEntry.CONTENT_URI,
+                            reviewProjection,
+                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY +"=?",
+                            new String[]{String.valueOf(mMovie.getTmdbId())},
+                            null
+                    );
+                    if (reviewsCursor.moveToFirst()) {
+                        Log.d(LOG_TAG, "did not find a review for this favorite movie in the db");
+                        mMovie.addReview(new String[]{
+                                reviewsCursor.getString(AUTHOR_IDX),
+                                reviewsCursor.getString(CONTENT_IDX)
+                        });
+                        while (reviewsCursor.moveToNext()) {
+                            mMovie.addReview(new String[]{
+                                    reviewsCursor.getString(AUTHOR_IDX),
+                                    reviewsCursor.getString(CONTENT_IDX)
+                            });
+                        }
+                    } else {
+                        Log.d(LOG_TAG, "did not find a review for this favorite movie in the db");
+                    }
+                    reviewsCursor.close();
+
+                } else {
+                    Log.e(LOG_TAG, "Could not find this movie in the favorites table...");
+                }
+                Log.d(LOG_TAG, "After adding videos to mMovie from DB, mMovie.hasVideos(): " +
+                        String.valueOf(mMovie.hasVideos()));
+                Log.d(LOG_TAG, "After adding reviews to mMovie from DB, mMovie.hasReviews(): " +
+                        String.valueOf(mMovie.hasReviews()));
 
             } else {
-                Log.e(LOG_TAG, "No Movie object found when launching fragment");
+                Log.e(LOG_TAG, "No Movie object or Uri found when launching fragment");
                 return null;
             }
         } else {
 
-            Log.v(LOG_TAG, "savedInstanceState existed and contained a movie. Using that one as mMovie.");
-            mMovie = savedInstanceState.getParcelable("movie");
+            Log.d(LOG_TAG, "savedInstanceState existed and contained a movie object. Using that one as mMovie.");
+            mMovie = savedInstanceState.getParcelable(MOVIE_PARCELABLE_KEY);
         }
 
         mContainer = container;
@@ -104,9 +221,9 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         ToggleButton toggle = (ToggleButton) rootView.findViewById(R.id.favorite_toggle_button);
 
         Cursor cursor = getActivity().getContentResolver().query(
-                MovieContract.MovieEntry.CONTENT_URI,
-                new String[]{MovieContract.MovieEntry._ID},
-                MovieContract.MovieEntry.COLUMN_TMDB_ID + "= ?",
+                MovieContract.FavoritesEntry.CONTENT_URI,
+                new String[]{MovieContract.FavoritesEntry._ID},
+                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "= ?",
                 new String[]{String.valueOf(mMovie.getTmdbId())},
                 null,
                 null);
@@ -128,8 +245,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                     Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
 
                     Cursor cursor = getActivity().getContentResolver().query(
-                            MovieContract.MovieEntry.CONTENT_URI,
-                            new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                            MovieContract.FavoritesEntry.CONTENT_URI,
+                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
                             null,
                             null,
                             null);
@@ -147,8 +264,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                     mMovie.removeFromFavorites(getActivity());
 
                     Cursor cursor = getActivity().getContentResolver().query(
-                            MovieContract.MovieEntry.CONTENT_URI,
-                            new String[]{MovieContract.MovieEntry.COLUMN_TITLE},
+                            MovieContract.FavoritesEntry.CONTENT_URI,
+                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
                             null,
                             null,
                             null);
@@ -318,7 +435,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     public void onSaveInstanceState(Bundle outState) {
 
         if (mMovie != null) {
-            outState.putParcelable("movie", mMovie);
+            outState.putParcelable(MOVIE_PARCELABLE_KEY, mMovie);
         }
 
         super.onSaveInstanceState(outState);

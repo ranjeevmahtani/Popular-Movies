@@ -1,9 +1,9 @@
 package com.example.android.popularmovies;
 
 
-import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,6 +22,10 @@ import java.util.ArrayList;
 public class DiscoveryFragment extends Fragment {
 
     private final String LOG_TAG = DiscoveryFragment.class.getSimpleName();
+
+    public static final String DISCOVERY_CODE_KEY = "discoveryCode";
+    public static final int DISCOVER_BY_POPULARITY_CODE = 100;
+    public static final int DISCOVER_BY_USER_RATING_CODE = 101;
 
     private MoviePosterAdapter mMoviePosterAdapter;
 
@@ -45,7 +49,7 @@ public class DiscoveryFragment extends Fragment {
 
         View rootView = inflater.inflate(R.layout.fragment_discovery, container, false);
 
-        GridView gridView = (GridView) rootView.findViewById(R.id.gridView);
+        GridView gridView = (GridView) rootView.findViewById(R.id.gridview);
 
         mMoviePosterAdapter =
                 new MoviePosterAdapter(
@@ -89,7 +93,12 @@ public class DiscoveryFragment extends Fragment {
         } else {
             // Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
             // Log.v(LOG_TAG, "updating movies via API call");
-            discoverByPopularity();
+            Bundle arguments = getArguments();
+            if (arguments != null && arguments.containsKey(DISCOVERY_CODE_KEY)) {
+                discover(arguments.getInt(DISCOVERY_CODE_KEY));
+            } else {
+                discover(DISCOVER_BY_POPULARITY_CODE);
+            }
         }
 
         return rootView;
@@ -130,35 +139,40 @@ public class DiscoveryFragment extends Fragment {
         //noinspection SimplifiableIfStatement
 
         if (id == R.id.action_discover_by_popularity) {
-            discoverByPopularity();
+            discover(DISCOVER_BY_POPULARITY_CODE);
         }
         else if (id == R.id.action_discover_by_user_rating) {
-            discoverByUserRating();
+            discover(DISCOVER_BY_USER_RATING_CODE);
         }
 
         else if (id == R.id.action_view_favorites) {
-            viewFavorites();
+            ((Callback)getActivity()).viewFavorites();
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    public void discoverByUserRating(){
+    public void discover(int discoveryCode) {
         FetchMoviesTask moviesTask = new FetchMoviesTask(getActivity(), mMoviePosterAdapter);
-        moviesTask.execute(getString(R.string.API_param_descending_rating));
-    }
 
-    public void discoverByPopularity() {
-        FetchMoviesTask moviesTask = new FetchMoviesTask(getActivity(), mMoviePosterAdapter);
-        moviesTask.execute(getString(R.string.API_param_descending_popularity));
-    }
-
-    public void viewFavorites() {
-        //TODO: show dem favorites
+        switch (discoveryCode) {
+            case DISCOVER_BY_POPULARITY_CODE: {
+                moviesTask.execute(getString(R.string.API_param_descending_popularity));
+                break;
+            }
+            case DISCOVER_BY_USER_RATING_CODE: {
+                moviesTask.execute(getString(R.string.API_param_descending_rating));
+                break;
+            }
+            default: {
+                moviesTask.execute(getString(R.string.API_param_descending_popularity));
+            }
+        }
     }
 
     public interface Callback  {
         void onItemSelected(Movie movie);
+        void viewFavorites();
     }
 }
 

@@ -1,9 +1,12 @@
 package com.example.android.popularmovies;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import com.example.android.popularmovies.data.MovieContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,28 +18,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Vector;
 
 /**
  * Created by ranjeevmahtani on 8/14/15.
  */
 
-public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
+public class FetchMoviesIntoDbTask extends AsyncTask<String, Void, Void> {
 
-    private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
+    private final String LOG_TAG = FetchMoviesIntoDbTask.class.getSimpleName();
 
     private Context mContext;
 
-    private MoviePosterAdapter mMoviePosterAdapter;
-
-    public FetchMoviesTask(Context context, MoviePosterAdapter moviePosterAdapter) {
+    public FetchMoviesIntoDbTask(Context context) {
         mContext = context;
-        mMoviePosterAdapter = moviePosterAdapter;
     }
 
     @Override
-    protected Movie[] doInBackground(String... sortOption) {
+    protected Void doInBackground(String... sortOption) {
 
         // Log.v(LOG_TAG, "doing in background...");
         // Log.v(LOG_TAG, "Sort Option: " + sortOption[0]);
@@ -45,39 +44,17 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
         // Log.v(LOG_TAG, "queryURL:" + queryURL.toString());
 
         String moviesJsonStr = requestDataFromApi(queryURL);
-        Movie[] movies;
 
         try {
-            movies = getMovieArrayFromJsonStr(moviesJsonStr);
+            loadMoviesFromJsonStrToDb(moviesJsonStr);
             // saveMovieVideoInfo(movies);
             // Log.v(LOG_TAG, movies[0].getMovieTitle() + ", " + movies[0].getVideos());
-            return movies;
         } catch (JSONException e) {
             Log.e(LOG_TAG, e.getMessage(), e);
             e.printStackTrace();
-            return null;
         }
 
-    }
-
-    @Override
-    protected void onPostExecute(Movie[] movies) {
-
-        // Log.v(LOG_TAG, "entered onPostExecute");
-
-        if (movies != null) {
-            //Log.v(LOG_TAG, "movies != null");
-            ArrayList<Movie> movieArrayList = new ArrayList<Movie>(Arrays.asList(movies));
-            mMoviePosterAdapter.clear();
-            mMoviePosterAdapter.addAll(movieArrayList);
-            mMoviePosterAdapter.notifyDataSetChanged();
-
-            // Log.v(LOG_TAG, "mMovieArrayList item 0: " + mMovieArrayList.get(0).getMovieTitle() + ", " + mMovieArrayList.get(0).getVideos());
-            // Log.v(LOG_TAG, "mMoviePosterAdapter item 0: " + mMoviePosterAdapter.getItem(0).getMovieTitle() + ", " + mMoviePosterAdapter.getItem(0).getVideos());
-        }
-        else {
-            Log.v(LOG_TAG, "movies was null???");
-        }
+        return null;
     }
 
     private URL getDiscoveryQueryUrl(String sortOption) {
@@ -169,7 +146,7 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
         }
     }
 
-    private Movie[] getMovieArrayFromJsonStr(String moviesDataStr)
+    private void loadMoviesFromJsonStrToDb(String moviesDataStr)
             throws JSONException {
 
         final int resultCount = 20; //20 results shown per page: initial setting
@@ -183,37 +160,45 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
         final String TMDB_USER_RATING = "vote_average";
         final String TMDB_RELEASE_DATE = "release_date";
 
-        JSONObject moviesJsonResult = new JSONObject(moviesDataStr);
-        JSONArray moviesJsonArray = moviesJsonResult.getJSONArray(TMDB_MOVIES_LIST);
+        try {
+            JSONObject moviesJsonResult = new JSONObject(moviesDataStr);
+            JSONArray moviesJsonArray = moviesJsonResult.getJSONArray(TMDB_MOVIES_LIST);
 
+            Vector<ContentValues> contentValuesVector = new Vector<ContentValues>();
 
-        //Create an array of movie objects to store relevant details from the JSON results
-        Movie[] moviesObjectArray = new Movie[resultCount];
+            //for each movie in the JSON array, create a contentValues set and put the relevant values
+            for (int i = 0; i < moviesJsonArray.length(); i++) {
 
+                ContentValues movieContentValues = new ContentValues();
 
-        //for each movie in the JSON array, create a Movie object and store the relevant details
-        for (int i = 0; i < moviesJsonArray.length(); i++) {
+                // Get the JSON object representing the movie
+                JSONObject movieJson = moviesJsonArray.getJSONObject(i);
 
-            Movie movie = new Movie();
+                //Set movie details to the movie object
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_TMDB_ID, movieJson.getInt(TMDB_MOVIE_ID));
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_TITLE, movieJson.getString(TMDB_TITLE));
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, movieJson.getString(TMDB_POSTER_PATH));
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_PLOT_SYNOPSIS, movieJson.getString(TMDB_PLOT_SYNOPSIS));
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_RATING, movieJson.getDouble(TMDB_USER_RATING));
+                movieContentValues.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, movieJson.getString(TMDB_RELEASE_DATE));
+                contentValuesVector.add(movieContentValues);
+            }
 
-            // Get the JSON object representing the movie
-            JSONObject movieJson = moviesJsonArray.getJSONObject(i);
+            int inserted = 0;
+            // add those movies to the DB
+            if (contentValuesVector.size() > 0) {
+                ContentValues[] contentValuesArray = new ContentValues[contentValuesVector.size()];
+                contentValuesVector.toArray(contentValuesArray);
+                inserted = mContext.getContentResolver().bulkInsert(
+                        MovieContract.MovieEntry.CONTENT_URI,
+                        contentValuesArray);
+                Log.v(LOG_TAG, inserted + " movies inserted into the movies DB.");
+            }
 
-            //Set movie details to the movie object
-            movie.setTmdbId(movieJson.getInt(TMDB_MOVIE_ID));
-            movie.setMovieTitle(movieJson.getString(TMDB_TITLE));
-            movie.setMoviePosterPath(movieJson.getString(TMDB_POSTER_PATH));
-            movie.setMovieSynopsis(movieJson.getString(TMDB_PLOT_SYNOPSIS));
-            movie.setMovieUserRating(movieJson.getDouble(TMDB_USER_RATING));
-            movie.setMovieReleaseDate(movieJson.getString(TMDB_RELEASE_DATE));
-
-            moviesObjectArray[i] = movie;
-
-            //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
-
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, e.getMessage(), e);
+            e.printStackTrace();
         }
-
-        return moviesObjectArray;
     }
 
 // this method commented out:

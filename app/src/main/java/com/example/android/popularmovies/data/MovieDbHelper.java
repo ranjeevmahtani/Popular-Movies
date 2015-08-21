@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class MovieDbHelper extends SQLiteOpenHelper{
 
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     static final String DATABASE_NAME = "movies.db";
 
@@ -19,40 +19,52 @@ public class MovieDbHelper extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
-         final String SQL_CREATE_MOVIE_TABLE =
-                 "CREATE TABLE " + MovieContract.MovieEntry.TABLE_NAME + " (" +
-                         MovieContract.MovieEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                         MovieContract.MovieEntry.COLUMN_TMDB_ID + " INTEGER NOT NULL, " +
-                         MovieContract.MovieEntry.COLUMN_TITLE + " STRING NOT NULL, " +
-                         MovieContract.MovieEntry.COLUMN_RELEASE_DATE + " STRING NOT NULL, " +
-                         MovieContract.MovieEntry.COLUMN_RATING + " REAL NOT NULL, " +
-                         MovieContract.MovieEntry.COLUMN_PLOT_SYNOPSIS + " STRING NOT NULL, " +
-                         MovieContract.MovieEntry.COLUMN_POSTER_PATH + " STRING NOT NULL" +
+         final String SQL_CREATE_FAVORITE_MOVIES_TABLE =
+                 "CREATE TABLE " + MovieContract.FavoritesEntry.TABLE_NAME + " (" +
+                         MovieContract.FavoritesEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                         MovieContract.FavoritesEntry.COLUMN_TMDB_ID + " INTEGER NOT NULL, " +
+                         MovieContract.FavoritesEntry.COLUMN_TITLE + " STRING NOT NULL, " +
+                         MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE + " STRING NOT NULL, " +
+                         MovieContract.FavoritesEntry.COLUMN_RATING + " REAL NOT NULL, " +
+                         MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS + " STRING NOT NULL, " +
+                         MovieContract.FavoritesEntry.COLUMN_POSTER_PATH + " STRING NOT NULL" +
                          ");";
 
-        final String SQL_CREATE_VIDEO_TABLE =
+        final String SQL_CREATE_VIDEOS_TABLE =
                 "CREATE TABLE " + MovieContract.VideoEntry.TABLE_NAME + " (" +
                         MovieContract.VideoEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         MovieContract.VideoEntry.COLUMN_MOVIE_KEY + " INTEGER NOT NULL, " +
                         MovieContract.VideoEntry.COLUMN_NAME + " STRING NOT NULL, " +
                         MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY + " STRING NOT NULL, " +
                         " FOREIGN KEY (" + MovieContract.VideoEntry.COLUMN_MOVIE_KEY + ") REFERENCES " +
-                        MovieContract.MovieEntry.TABLE_NAME + " (" + MovieContract.MovieEntry._ID + ") " +
+                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry._ID + ") " +
                         " );";
 
-        final String SQL_CREATE_REVIEW_TABLE =
+        final String SQL_CREATE_REVIEWS_TABLE =
                 "CREATE TABLE " + MovieContract.ReviewEntry.TABLE_NAME + " (" +
                         MovieContract.ReviewEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + " INTEGER NOT NULL, " +
                         MovieContract.ReviewEntry.COLUMN_AUTHOR + " STRING NOT NULL, " +
                         MovieContract.ReviewEntry.COLUMN_CONTENT + " STRING NOT NULL, " +
                         " FOREIGN KEY (" + MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + ") REFERENCES " +
-                        MovieContract.MovieEntry.TABLE_NAME + " (" + MovieContract.MovieEntry._ID + ") " +
+                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry._ID + ") " +
                         " );";
 
-        sqLiteDatabase.execSQL(SQL_CREATE_MOVIE_TABLE);
-        sqLiteDatabase.execSQL(SQL_CREATE_VIDEO_TABLE);
-        sqLiteDatabase.execSQL(SQL_CREATE_REVIEW_TABLE);
+        final String SQL_CREATE_MOVIES_TABLE =
+                "CREATE TABLE " + MovieContract.MovieEntry.TABLE_NAME + " (" +
+                        MovieContract.MovieEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        MovieContract.MovieEntry.COLUMN_TMDB_ID + " INTEGER NOT NULL, " +
+                        MovieContract.MovieEntry.COLUMN_TITLE + " STRING NOT NULL, " +
+                        MovieContract.MovieEntry.COLUMN_RELEASE_DATE + " STRING NOT NULL, " +
+                        MovieContract.MovieEntry.COLUMN_RATING + " REAL NOT NULL, " +
+                        MovieContract.MovieEntry.COLUMN_PLOT_SYNOPSIS + " STRING NOT NULL, " +
+                        MovieContract.MovieEntry.COLUMN_POSTER_PATH + " STRING NOT NULL" +
+                        ");";
+
+        sqLiteDatabase.execSQL(SQL_CREATE_FAVORITE_MOVIES_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_VIDEOS_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_REVIEWS_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_MOVIES_TABLE);
     }
 
     @Override
@@ -67,9 +79,10 @@ public class MovieDbHelper extends SQLiteOpenHelper{
         // If you want to update the schema without wiping data, commenting out the next 2 lines
         // should be your top priority before modifying this method.
 
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.MovieEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.FavoritesEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.VideoEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.ReviewEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.MovieEntry.TABLE_NAME);
 
         onCreate(sqLiteDatabase);
     }

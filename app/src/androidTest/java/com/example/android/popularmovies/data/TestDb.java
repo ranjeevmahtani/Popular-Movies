@@ -52,8 +52,8 @@ public class TestDb extends AndroidTestCase {
         // Note that there will be another table in the DB that stores the
         // Android metadata (db version information)
         final HashSet<String> tableNameHashSet = new HashSet<String>();
-        tableNameHashSet.add(MovieContract.MovieEntry.TABLE_NAME);
-        tableNameHashSet.add(MovieContract.MovieEntry.TABLE_NAME);
+        tableNameHashSet.add(MovieContract.FavoritesEntry.TABLE_NAME);
+        tableNameHashSet.add(MovieContract.FavoritesEntry.TABLE_NAME);
 
         mContext.deleteDatabase(MovieDbHelper.DATABASE_NAME);
         SQLiteDatabase db = new MovieDbHelper(
@@ -77,7 +77,7 @@ public class TestDb extends AndroidTestCase {
                 tableNameHashSet.isEmpty());
 
         // now, do our tables contain the correct columns?
-        c = db.rawQuery("PRAGMA table_info(" + MovieContract.MovieEntry.TABLE_NAME + ")",
+        c = db.rawQuery("PRAGMA table_info(" + MovieContract.FavoritesEntry.TABLE_NAME + ")",
                 null);
 
         assertTrue("Error: This means that we were unable to query the database for table information.",
@@ -85,13 +85,13 @@ public class TestDb extends AndroidTestCase {
 
         // Build a HashSet of all of the column names we want to look for
         final HashSet<String> locationColumnHashSet = new HashSet<String>();
-        locationColumnHashSet.add(MovieContract.MovieEntry._ID);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_TITLE);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_RATING);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_POSTER_PATH);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_PLOT_SYNOPSIS);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_RELEASE_DATE);
-        locationColumnHashSet.add(MovieContract.MovieEntry.COLUMN_TMDB_ID);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry._ID);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_TITLE);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_RATING);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_TMDB_ID);
 
         int columnNameIndex = c.getColumnIndex("name");
         do {

@@ -15,9 +15,9 @@ import com.squareup.picasso.Picasso;
 /**
  * Created by ranjeevmahtani on 8/17/15.
  */
-public class FavoritesAdapter extends CursorAdapter {
+public class MoviePosterDbAdapter extends CursorAdapter {
 
-    public FavoritesAdapter(Context context, Cursor cursor, int flags) {
+    public MoviePosterDbAdapter(Context context, Cursor cursor, int flags) {
         super(context, cursor, flags);
     }
 
@@ -33,7 +33,7 @@ public class FavoritesAdapter extends CursorAdapter {
 
         ImageView imageView = (ImageView) view;
 
-        int posterPath_index = cursor.getColumnIndex(MovieContract.MovieEntry.COLUMN_POSTER_PATH);
+        int posterPath_index = cursor.getColumnIndex(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH);
 
         String posterPath = cursor.getString(posterPath_index);
 

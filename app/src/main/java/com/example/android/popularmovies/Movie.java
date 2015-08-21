@@ -53,8 +53,8 @@ public class Movie implements Parcelable{
 
     }
 
-    public void setMovieId(int movieID){
-        this.tmdbId = movieID;
+    public void setTmdbId(int tmdbId){
+        this.tmdbId = tmdbId;
     }
 
     public long getMovieID(){
@@ -117,32 +117,32 @@ public class Movie implements Parcelable{
 
     public void addToFavorites(Context context) {
 
-        // First, check if the location with this city name exists in the db
+        // First, check if a movie with this TMDB ID exists in the db
         Cursor movieCursor = context.getContentResolver().query(
-                MovieContract.MovieEntry.CONTENT_URI,
-                new String[]{MovieContract.MovieEntry._ID},
-                MovieContract.MovieEntry.COLUMN_TMDB_ID + " = ?",
+                MovieContract.FavoritesEntry.CONTENT_URI,
+                new String[]{MovieContract.FavoritesEntry._ID},
+                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + " = ?",
                 new String[]{String.valueOf(this.tmdbId)},
                 null);
 
         if (movieCursor.moveToFirst()) {
-            int movieIdIndex = movieCursor.getColumnIndex(MovieContract.MovieEntry._ID);
+            int movieIdIndex = movieCursor.getColumnIndex(MovieContract.FavoritesEntry._ID);
             this.favoriteId = movieCursor.getLong(movieIdIndex);
         } else {
             ContentValues movieValues = new ContentValues();
 
             // Then add the data, along with the corresponding name of the data type,
             // so the content provider knows what kind of value is being inserted.
-            movieValues.put(MovieContract.MovieEntry.COLUMN_TMDB_ID, tmdbId);
-            movieValues.put(MovieContract.MovieEntry.COLUMN_TITLE, title);
-            movieValues.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, posterPath);
-            movieValues.put(MovieContract.MovieEntry.COLUMN_PLOT_SYNOPSIS, synopsis);
-            movieValues.put(MovieContract.MovieEntry.COLUMN_RATING, userRating);
-            movieValues.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, releaseDate);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_TMDB_ID, tmdbId);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_TITLE, title);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH, posterPath);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, synopsis);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_RATING, userRating);
+            movieValues.put(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
 
             // Finally, insert movie data into the database.
             Uri insertedUri = context.getContentResolver().insert(
-                    MovieContract.MovieEntry.CONTENT_URI,
+                    MovieContract.FavoritesEntry.CONTENT_URI,
                     movieValues
             );
 
@@ -153,7 +153,7 @@ public class Movie implements Parcelable{
 
             for (String[] video : videos) {
                 ContentValues videoCv = new ContentValues();
-                videoCv.put(MovieContract.VideoEntry.COLUMN_MOVIE_KEY, favoriteId);
+                videoCv.put(MovieContract.VideoEntry.COLUMN_MOVIE_KEY, this.tmdbId);
                 videoCv.put(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY, video[0]);
                 videoCv.put(MovieContract.VideoEntry.COLUMN_NAME, video[1]);
 
@@ -163,14 +163,15 @@ public class Movie implements Parcelable{
             if (videoCvVector.size() > 0) {
                 ContentValues[] cvArray = new ContentValues[videoCvVector.size()];
                 videoCvVector.toArray(cvArray);
-                 context.getContentResolver().bulkInsert(MovieContract.VideoEntry.CONTENT_URI,cvArray);
+                int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.VideoEntry.CONTENT_URI,cvArray);
+                Log.v(LOG_TAG, "rows inserted into videos table: " + rowsInserted);
             }
 
             Vector<ContentValues> reviewCvVector = new Vector<ContentValues>(reviews.size());
 
             for (String[] review : reviews) {
                 ContentValues reviewCv = new ContentValues();
-                reviewCv.put(MovieContract.ReviewEntry.COLUMN_MOVIE_KEY, favoriteId);
+                reviewCv.put(MovieContract.ReviewEntry.COLUMN_MOVIE_KEY, this.tmdbId);
                 reviewCv.put(MovieContract.ReviewEntry.COLUMN_AUTHOR, review[0]);
                 reviewCv.put(MovieContract.ReviewEntry.COLUMN_CONTENT, review[1]);
 
@@ -180,7 +181,8 @@ public class Movie implements Parcelable{
             if (reviewCvVector.size() > 0) {
                 ContentValues[] reviewCvArray = new ContentValues[reviewCvVector.size()];
                 reviewCvVector.toArray(reviewCvArray);
-                context.getContentResolver().bulkInsert(MovieContract.ReviewEntry.CONTENT_URI,reviewCvArray);
+                int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.ReviewEntry.CONTENT_URI,reviewCvArray);
+                Log.v(LOG_TAG, "rows inserted into reviews table: " + rowsInserted);
             }
         }
 
@@ -192,17 +194,17 @@ public class Movie implements Parcelable{
     public void removeFromFavorites(Context context) {
 
         Cursor cursor = context.getContentResolver().query(
-                MovieContract.MovieEntry.CONTENT_URI,
-                new String[]{MovieContract.MovieEntry._ID},
-                MovieContract.MovieEntry.COLUMN_TMDB_ID + "=?",
+                MovieContract.FavoritesEntry.CONTENT_URI,
+                new String[]{MovieContract.FavoritesEntry._ID},
+                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
                 new String[]{String.valueOf(this.tmdbId)},
                 null);
 
         if (cursor.moveToFirst()) { //if the movie exists in the movies table
             //delete the movie from the movies table
             context.getContentResolver().delete(
-                    MovieContract.MovieEntry.CONTENT_URI,
-                    MovieContract.MovieEntry.COLUMN_TMDB_ID + "=?",
+                    MovieContract.FavoritesEntry.CONTENT_URI,
+                    MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
                     new String[]{String.valueOf(this.tmdbId)});
 
             this.isFavorite=false;
@@ -249,9 +251,9 @@ public class Movie implements Parcelable{
                 this.videos = new ArrayList<String[]>();
             }
             this.videos.add(videoIdNamePair);
-            if (!hasVideos()) {
+            //if (!hasVideos()) {
                 this.hasVideos = true;
-            }
+            //}
         }
         else {
             Log.e(LOG_TAG, "videoNamePair array was not of length 2");
@@ -273,9 +275,9 @@ public class Movie implements Parcelable{
                 this.reviews = new ArrayList<String[]>();
             }
             this.reviews.add(review);
-            if (!hasReviews()) {
+            //if (!hasReviews()) {
                 this.hasReviews = true;
-            }
+            //}
         } else {
             Log.e(LOG_TAG, "did not supply a 2-element array for the review");
         }
