@@ -92,6 +92,70 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 Log.d(LOG_TAG, "bundle contains a parceled movie object. easy");
                 mMovie = arguments.getParcelable(MOVIE_PARCELABLE_KEY);
 
+
+                // query the favorites table to see if this is a favorite movie
+                Cursor favoriteCursor = getActivity().getContentResolver().query(
+                        MovieContract.FavoritesEntry.CONTENT_URI,
+                        new String[]{MovieContract.FavoritesEntry.COLUMN_TMDB_ID},
+                        MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
+                        new String[]{String.valueOf(mMovie.getTmdbId())},
+                        null
+                );
+
+                //if it is
+                if (favoriteCursor.moveToFirst()) {
+                    //mark it so
+                    mMovie.setIsFavorite(true);
+
+                    // query the videos table to see if this favorite movie has any videos
+                    Cursor videosCursor = getActivity().getContentResolver().query(
+                            MovieContract.VideoEntry.CONTENT_URI,
+                            null,
+                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY + "=?",
+                            new String[]{String.valueOf(mMovie.getTmdbId())},
+                            null
+                    );
+                    //if it does
+                    if (videosCursor.moveToFirst()) {
+                        // add them all to the movie object
+                        do {
+                            String[] video =
+                                    {videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY)),
+                                     videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_NAME))
+                                    };
+                            mMovie.addVideo(video);
+
+                        } while (videosCursor.moveToNext());
+                    }
+                    videosCursor.close();
+
+                    //query the reviews table to see if this favorite movie has any reviews
+                    Cursor reviewsCursor = getActivity().getContentResolver().query(
+                            MovieContract.ReviewEntry.CONTENT_URI,
+                            null,
+                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
+                            new String[]{String.valueOf(mMovie.getTmdbId())},
+                            null
+                    );
+
+                    // if it does
+                    if (reviewsCursor.moveToFirst()) {
+                        //add them all to the movie object
+                        do {
+                            String[] review =
+                                    {reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_AUTHOR)),
+                                     reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_CONTENT))
+                                    };
+                            mMovie.addReview(review);
+                        } while (reviewsCursor.moveToNext());
+                    }
+                    reviewsCursor.close();
+                } else {
+                    mMovie.setIsFavorite(false);
+                }
+                favoriteCursor.close();
+
+
             } else if (arguments != null && arguments.containsKey(MOVIE_URI_KEY)) {
 
                 Log.d(LOG_TAG, "bundle contained the URI for a favorited movie");
@@ -209,6 +273,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 Log.v(LOG_TAG, "No Movie object or Uri found when launching fragment");
                 return null;
             }
+
         } else {
             Log.d(LOG_TAG, "savedInstanceState existed and contained a movie object. Using that one as mMovie.");
             mMovie = savedInstanceState.getParcelable(MOVIE_PARCELABLE_KEY);
@@ -222,22 +287,11 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         ToggleButton toggle = (ToggleButton) rootView.findViewById(R.id.favorite_toggle_button);
 
-        Cursor cursor = getActivity().getContentResolver().query(
-                MovieContract.FavoritesEntry.CONTENT_URI,
-                new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
-                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
-                new String[]{String.valueOf(mMovie.getTmdbId())},
-                null);
-
-        if (cursor.moveToFirst()) {
-            mMovie.setIsFavorite(true);
+        if (mMovie.isFavorite()) {
             toggle.setChecked(true);
         } else {
-            mMovie.setIsFavorite(false);
             toggle.setChecked(false);
         }
-
-        cursor.close();
 
         toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

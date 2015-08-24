@@ -79,7 +79,7 @@ public class MovieContract {
         //Table name
         public static final String TABLE_NAME = "videos";
 
-        public static final String COLUMN_MOVIE_KEY = "movie_id";
+        public static final String COLUMN_MOVIE_KEY = "movie_tmdbId";
 
         public static final String COLUMN_YOUTUBE_KEY = "key";
 
@@ -105,7 +105,7 @@ public class MovieContract {
         //Table name
         public static final String TABLE_NAME = "reviews";
 
-        public static final String COLUMN_MOVIE_KEY = "movie_id";
+        public static final String COLUMN_MOVIE_KEY = "movie_tmdbId";
 
         public static final String COLUMN_AUTHOR = "author";
 

@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class MovieDbHelper extends SQLiteOpenHelper{
 
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     static final String DATABASE_NAME = "movies.db";
 
@@ -38,7 +38,7 @@ public class MovieDbHelper extends SQLiteOpenHelper{
                         MovieContract.VideoEntry.COLUMN_NAME + " STRING NOT NULL, " +
                         MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY + " STRING NOT NULL, " +
                         " FOREIGN KEY (" + MovieContract.VideoEntry.COLUMN_MOVIE_KEY + ") REFERENCES " +
-                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry._ID + ") " +
+                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry.COLUMN_TMDB_ID + ") " +
                         " );";
 
         final String SQL_CREATE_REVIEWS_TABLE =
@@ -48,7 +48,7 @@ public class MovieDbHelper extends SQLiteOpenHelper{
                         MovieContract.ReviewEntry.COLUMN_AUTHOR + " STRING NOT NULL, " +
                         MovieContract.ReviewEntry.COLUMN_CONTENT + " STRING NOT NULL, " +
                         " FOREIGN KEY (" + MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + ") REFERENCES " +
-                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry._ID + ") " +
+                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry.COLUMN_TMDB_ID + ") " +
                         " );";
 
         final String SQL_CREATE_MOVIES_TABLE =

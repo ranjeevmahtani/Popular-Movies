@@ -237,8 +237,8 @@ public class Movie implements Parcelable{
                 new String[]{String.valueOf(this.tmdbId)},
                 null);
 
-        if (cursor.moveToFirst()) { //if the movie exists in the movies table
-            //delete the movie from the movies table
+        if (cursor.moveToFirst()) { //if the movie exists in the favorites table
+            //delete the movie from the favorites table
             context.getContentResolver().delete(
                     MovieContract.FavoritesEntry.CONTENT_URI,
                     MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
@@ -255,10 +255,11 @@ public class Movie implements Parcelable{
             Log.d(LOG_TAG, videosDeletedCount + " videos deleted for this movie");
 
             //delete any saved reviews for this movie from the videos table
-            context.getContentResolver().delete(
+            int reviewsDeletedCount = context.getContentResolver().delete(
                     MovieContract.ReviewEntry.CONTENT_URI,
                     MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
                     new String[]{movieTmdbId});
+            Log.d(LOG_TAG, reviewsDeletedCount + " reviews deleted for this movie");
         }
 
         // Delete the poster file saved on the disk.
@@ -292,7 +293,7 @@ public class Movie implements Parcelable{
 
     /* Store information pertaining to videos related to this movie.
      * Each video is represented by a 2-element String array where:
-     * the 1st element is the video Id and the 2nd element is the video name.
+     * the 1st element is the youtube video Id and the 2nd element is the video name.
      * For each video, the Id corresponds to the video's youTube Id
      * the video's name is a simple descriptive name of the video
      * The String arrays representing relevant videos are stored in an ArrayList<String[]> called videos
