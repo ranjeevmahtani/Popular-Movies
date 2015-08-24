@@ -38,7 +38,7 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
 
         ImageView moviePosterView = (ImageView) convertView.findViewById(R.id.grid_item_movie_image);
 
-        String posterUrlStr = movie.getPosterURL();
+        String posterUrlStr = movie.getPosterURLStr();
 
         Picasso.with(getContext()).load(posterUrlStr).into(moviePosterView);
 

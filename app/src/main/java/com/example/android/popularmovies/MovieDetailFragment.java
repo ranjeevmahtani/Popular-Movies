@@ -19,6 +19,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.example.android.popularmovies.data.MovieContract;
@@ -36,9 +37,9 @@ import java.util.ArrayList;
 public class MovieDetailFragment extends Fragment implements View.OnClickListener {
 
     private static final String LOG_TAG = MovieDetailFragment.class.getSimpleName();
-    private static String sPosterUrlStr;
-    static final String MOVIE_URI_KEY = "movieURI";
-    static final String MOVIE_PARCELABLE_KEY = "movieParcelableKey";
+
+    public static final String MOVIE_URI_KEY = "movieURI";
+    public static final String MOVIE_PARCELABLE_KEY = "movieParcelableKey";
 
     private LinearLayout mLinearLayout;
     private ViewGroup mContainer;
@@ -79,26 +80,31 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        if(savedInstanceState == null || savedInstanceState.getParcelable(MOVIE_PARCELABLE_KEY) == null) {
+        if(savedInstanceState == null || !savedInstanceState.containsKey(MOVIE_PARCELABLE_KEY)) {
 
             Log.d(LOG_TAG, "savedInstanceState was null or did not contain a movie object");
 
             Bundle arguments = getArguments();
-            if(arguments!=null && arguments.getParcelable(MOVIE_PARCELABLE_KEY) != null) {
+
+            if(arguments!=null && arguments.containsKey(MOVIE_PARCELABLE_KEY)) {
                 Log.d(LOG_TAG, "bundle contains a parceled movie object. easy");
                 mMovie = arguments.getParcelable(MOVIE_PARCELABLE_KEY);
 
-            } else if (arguments != null && arguments.getParcelable(MOVIE_URI_KEY) != null ) {
+            } else if (arguments != null && arguments.containsKey(MOVIE_URI_KEY)) {
+
                 Log.d(LOG_TAG, "bundle contained the URI for a favorited movie");
                 Log.d(LOG_TAG, "creating a movie object from info obtained via db query");
+                Uri movieUri = arguments.getParcelable(MOVIE_URI_KEY);
+
 
                 final String[] movieProjection = {
                         MovieContract.FavoritesEntry.COLUMN_TMDB_ID,
                         MovieContract.FavoritesEntry.COLUMN_TITLE,
                         MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS,
-                        MovieContract.FavoritesEntry.COLUMN_POSTER_PATH,
+                        MovieContract.FavoritesEntry.COLUMN_TMDB_POSTER_PATH,
                         MovieContract.FavoritesEntry.COLUMN_RATING,
                         MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE,
+                        MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL,
                 };
                 final int TMDB_ID_IDX = 0;
                 final int TITLE_IDX = 1;
@@ -106,8 +112,8 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 final int POSTER_PATH_IDX = 3;
                 final int RATING_IDX = 4;
                 final int RELEASE_DATE_IDX = 5;
+                final int POSTER_ON_DISK_URL_IDX = 6;
 
-                Uri movieUri = arguments.getParcelable(MOVIE_URI_KEY);
                 long favoriteMovie_id = MovieContract.FavoritesEntry.getMovieIdFromUri(movieUri);
                 Cursor movieCursor = getActivity().getContentResolver().query(
                         MovieContract.FavoritesEntry.CONTENT_URI,
@@ -124,18 +130,18 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                     mMovie.setMovieSynopsis(movieCursor.getString(SYNOPSIS_IDX));
                     mMovie.setTmdbId(movieCursor.getInt(TMDB_ID_IDX));
                     mMovie.setMovieUserRating(movieCursor.getDouble(RATING_IDX));
+                    mMovie.setPosterOnDiskUrlStr(movieCursor.getString(POSTER_ON_DISK_URL_IDX));
+                    mMovie.setIsFavorite(true);
 
                     movieCursor.close();
 
                     // get videos and reviews from db if they exist and add them to the movie
                     final String[] videoProjection = new String[] {
-                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY,
                             MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY,
                             MovieContract.VideoEntry.COLUMN_NAME
                     };
-                    final int MOVIE_KEY_IDX = 0;
-                    final int YOUTUBE_KEY_IDX = 1;
-                    final int NAME_IDX = 2;
+                    final int YOUTUBE_KEY_IDX = 0;
+                    final int NAME_IDX = 1;
 
                     Cursor videosCursor = getActivity().getContentResolver().query(
                             MovieContract.VideoEntry.CONTENT_URI,
@@ -162,13 +168,12 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                     videosCursor.close();
 
                     final String[] reviewProjection = new String[] {
-                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY,
                             MovieContract.ReviewEntry.COLUMN_AUTHOR,
                             MovieContract.ReviewEntry.COLUMN_CONTENT
                     };
 
-                    final int AUTHOR_IDX = 1;
-                    final int CONTENT_IDX = 2;
+                    final int AUTHOR_IDX = 0;
+                    final int CONTENT_IDX = 1;
 
                     Cursor reviewsCursor = getActivity().getContentResolver().query(
                             MovieContract.ReviewEntry.CONTENT_URI,
@@ -178,7 +183,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                             null
                     );
                     if (reviewsCursor.moveToFirst()) {
-                        Log.d(LOG_TAG, "did not find a review for this favorite movie in the db");
+                        Log.d(LOG_TAG, "found a review for this favorite movie in the db");
                         mMovie.addReview(new String[]{
                                 reviewsCursor.getString(AUTHOR_IDX),
                                 reviewsCursor.getString(CONTENT_IDX)
@@ -197,17 +202,12 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 } else {
                     Log.e(LOG_TAG, "Could not find this movie in the favorites table...");
                 }
-                Log.d(LOG_TAG, "After adding videos to mMovie from DB, mMovie.hasVideos(): " +
-                        String.valueOf(mMovie.hasVideos()));
-                Log.d(LOG_TAG, "After adding reviews to mMovie from DB, mMovie.hasReviews(): " +
-                        String.valueOf(mMovie.hasReviews()));
 
             } else {
-                Log.e(LOG_TAG, "No Movie object or Uri found when launching fragment");
+                Log.v(LOG_TAG, "No Movie object or Uri found when launching fragment");
                 return null;
             }
         } else {
-
             Log.d(LOG_TAG, "savedInstanceState existed and contained a movie object. Using that one as mMovie.");
             mMovie = savedInstanceState.getParcelable(MOVIE_PARCELABLE_KEY);
         }
@@ -222,15 +222,16 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         Cursor cursor = getActivity().getContentResolver().query(
                 MovieContract.FavoritesEntry.CONTENT_URI,
-                new String[]{MovieContract.FavoritesEntry._ID},
-                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "= ?",
+                new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
+                MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
                 new String[]{String.valueOf(mMovie.getTmdbId())},
-                null,
                 null);
 
         if (cursor.moveToFirst()) {
+            mMovie.setIsFavorite(true);
             toggle.setChecked(true);
         } else {
+            mMovie.setIsFavorite(false);
             toggle.setChecked(false);
         }
 
@@ -244,47 +245,54 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
                     Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
 
-                    Cursor cursor = getActivity().getContentResolver().query(
-                            MovieContract.FavoritesEntry.CONTENT_URI,
-                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
-                            null,
-                            null,
-                            null);
-                    String favoriteTitles = "";
-                    if (cursor.moveToFirst()) {
-                        favoriteTitles = cursor.getString(0);
+//                    Cursor cursor = getActivity().getContentResolver().query(
+//                            MovieContract.FavoritesEntry.CONTENT_URI,
+//                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
+//                            null,
+//                            null,
+//                            null);
+//                    String favoriteTitles = "";
+//                    if (cursor.moveToFirst()) {
+//                        favoriteTitles = cursor.getString(0);
+//                    }
+//                    while (cursor.moveToNext()) {
+//                        favoriteTitles += " " + cursor.getString(0);
+//                    }
+//                    cursor.close();
+//                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
+
+                    // this is a backup since there's currently an unresolved bug:
+                    // if the user tries to favorite a movie while offline and the poster isn't cached, the movie won't be favorited
+                    if (!mMovie.isFavorite()) {
+                        buttonView.setChecked(false);
+                        Toast toast = Toast.makeText(getActivity(), "Sorry, you can't favorite this movie while offline", Toast.LENGTH_SHORT);
+                        toast.show();
                     }
-                    while (cursor.moveToNext()) {
-                        favoriteTitles += " " + cursor.getString(0);
-                    }
-                    cursor.close();
-                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
 
                 } else {
                     mMovie.removeFromFavorites(getActivity());
 
-                    Cursor cursor = getActivity().getContentResolver().query(
-                            MovieContract.FavoritesEntry.CONTENT_URI,
-                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
-                            null,
-                            null,
-                            null);
-                    String favoriteTitles = "";
-                    if (cursor.moveToFirst()) {
-                        favoriteTitles = cursor.getString(0);
-                    }
-                    while (cursor.moveToNext()) {
-                        favoriteTitles += " " + cursor.getString(0);
-                    }
-                    cursor.close();
-                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
+//                    Cursor cursor = getActivity().getContentResolver().query(
+//                            MovieContract.FavoritesEntry.CONTENT_URI,
+//                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
+//                            null,
+//                            null,
+//                            null);
+//                    String favoriteTitles = "";
+//                    if (cursor.moveToFirst()) {
+//                        favoriteTitles = cursor.getString(0);
+//                    }
+//                    while (cursor.moveToNext()) {
+//                        favoriteTitles += " " + cursor.getString(0);
+//                    }
+//                    cursor.close();
+//                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
                 }
             }
         });
 
-                ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
-        sPosterUrlStr = mMovie.getPosterURL();
-        Picasso.with(getActivity()).load(sPosterUrlStr).into(imageView);
+        ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
+        Picasso.with(getActivity()).load(mMovie.getPosterURLStr()).into(imageView);
 
         ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText(
                 "Release Date: " + mMovie.getMovieReleaseDate());
@@ -296,20 +304,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         // Run AsyncTask to query API for videos and reviews if the movie doesn't already have them,
         // and populate views for videos and reviews into fragment.
-
-        if (!mMovie.hasVideos() || !mMovie.hasReviews()) {
-
-            Log.v(LOG_TAG, "mMovie.hasVideos(): " + String.valueOf(mMovie.hasVideos()));
-            Log.v(LOG_TAG, "mMovie.hasReviews(): " + String.valueOf(mMovie.hasReviews()));
-
-            new FetchMovieVideosAndReviews().execute();
-
-        } else {
-
-            loadVideoViews(mMovie);
-            loadReviewViews(mMovie);
-
-        }
+        new FetchMovieVideosAndReviews().execute();
 
         return rootView;
     }
@@ -321,25 +316,26 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         @Override
         protected Void doInBackground(String... params) {
 
-            if (!mMovie.hasVideos()) {
-                URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getMovieID());
-
-                try {
-                    //Log.v(LOG_TAG, "Attempting to query and save videos");
-                    Utility.saveMovieVideoInfo(mMovie, videoQueryUrl);
-                } catch (JSONException e) {
-                    Log.e(LOG_TAG, e.getMessage());
+            if (Utility.isOnline(getActivity())) {
+                if (!mMovie.hasVideos()) {
+                    URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getMovieID());
+                    try {
+                        Utility.saveMovieVideoInfo(mMovie, videoQueryUrl);
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, e.getMessage());
+                    }
                 }
-            }
 
-            if (!mMovie.hasReviews()) {
-                URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getMovieID());
-                try {
-                    //Log.v(LOG_TAG, "Attempting to query and save reviews");
-                    Utility.saveMovieReviews(mMovie, reviewQueryUrl);
-                } catch (JSONException e) {
-                    Log.e(LOG_TAG, e.getMessage());
+                if (!mMovie.hasReviews()) {
+                    URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getMovieID());
+                    try {
+                        Utility.saveMovieReviews(mMovie, reviewQueryUrl);
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, e.getMessage());
+                    }
                 }
+            } else {
+                Log.d(LOG_TAG, "Internet connection not available. Did not query for videos and reviews");
             }
             return null;
         }
@@ -386,7 +382,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         ImageView videoIconBackground = (ImageView) videoView.findViewById(R.id.video_icon_background);
         TextView videoName = (TextView) videoView.findViewById(R.id.video_name);
 
-        Picasso.with(getActivity()).load(sPosterUrlStr).into(videoIconBackground);
+        Picasso.with(getActivity()).load(mMovie.getPosterURLStr()).into(videoIconBackground);
         videoName.setText(video[1]);
         videoView.setTag(video[0]);
 

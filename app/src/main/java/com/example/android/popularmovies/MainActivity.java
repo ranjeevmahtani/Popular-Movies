@@ -101,7 +101,7 @@ public class MainActivity extends ActionBarActivity implements DiscoveryFragment
         } else {
 
             Bundle args = new Bundle();
-            args.putParcelable(MovieDetailFragment.MOVIE_URI_KEY,movieUri);
+            args.putParcelable(MovieDetailFragment.MOVIE_URI_KEY, movieUri);
 
             MovieDetailFragment detailFragment = new MovieDetailFragment();
             detailFragment.setArguments(args);
@@ -115,15 +115,15 @@ public class MainActivity extends ActionBarActivity implements DiscoveryFragment
     // Callback method to handle showing of favorites
     public void viewFavorites() {
 
-        if (mTwoPane) {
-            getSupportFragmentManager().beginTransaction().
-                    replace(R.id.movie_discovery_container, new DiscoveryFragment2(), BROWSERFRAGMENT_TAG)
-                    .replace(R.id.movie_detail_container, new MovieDetailFragment(), DETAILFRAGMENT_TAG)
+        if (!mTwoPane) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.movie_discovery_container, new DiscoveryFragment2(), BROWSERFRAGMENT_TAG)
                     .addToBackStack(null)
                     .commit();
         } else {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.movie_discovery_container, new DiscoveryFragment2(), BROWSERFRAGMENT_TAG)
+                    .replace(R.id.movie_detail_container, new MovieDetailFragment(), DETAILFRAGMENT_TAG)
                     .addToBackStack(null)
                     .commit();
         }
@@ -138,10 +138,17 @@ public class MainActivity extends ActionBarActivity implements DiscoveryFragment
         DiscoveryFragment discoveryFragment = new DiscoveryFragment();
         discoveryFragment.setArguments(arguments);
 
-        getSupportFragmentManager().beginTransaction().
-                replace(R.id.movie_discovery_container, discoveryFragment, BROWSERFRAGMENT_TAG)
-                .replace(R.id.movie_detail_container, new MovieDetailFragment(), DETAILFRAGMENT_TAG)
-                .addToBackStack(null)
-                .commit();
+        if (!mTwoPane) {
+            getSupportFragmentManager().beginTransaction().
+                    replace(R.id.movie_discovery_container, discoveryFragment, BROWSERFRAGMENT_TAG)
+                    .addToBackStack(null)
+                    .commit();
+        } else {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.movie_discovery_container, discoveryFragment, BROWSERFRAGMENT_TAG)
+                    .replace(R.id.movie_detail_container, new MovieDetailFragment(), DETAILFRAGMENT_TAG)
+                    .addToBackStack(null)
+                    .commit();
+        }
     }
 }

@@ -2,7 +2,6 @@ package com.example.android.popularmovies;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,24 +32,12 @@ public class MoviePosterDbAdapter extends CursorAdapter {
 
         ImageView imageView = (ImageView) view;
 
-        int posterPath_index = cursor.getColumnIndex(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH);
+        int posterOnDiskUrlStr_index = cursor.getColumnIndex(MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL);
 
-        String posterPath = cursor.getString(posterPath_index);
+        String posterOnDiskUrlStr = cursor.getString(posterOnDiskUrlStr_index);
 
-        String posterUrlStr = getPosterUrlStr(posterPath);
 
-        Picasso.with(context).load(posterUrlStr).into(imageView);
-    }
-
-    public String getPosterUrlStr (String posterPath) {
-        Uri.Builder builder = new Uri.Builder();
-        builder.scheme("http")
-                .authority("image.tmdb.org")
-                .appendPath("t")
-                .appendPath("p")
-                .appendPath("w185");
-
-        return builder.build().toString() + posterPath;
+        Picasso.with(context).load(posterOnDiskUrlStr).into(imageView);
     }
 }
 

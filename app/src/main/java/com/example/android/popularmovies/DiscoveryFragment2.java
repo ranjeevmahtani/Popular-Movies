@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.example.android.popularmovies.data.MovieContract;
 
@@ -39,18 +40,18 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
     private static final String[] DISCOVERY_COLUMNS = {
         //MovieContract.FavoritesEntry.TABLE_NAME + "." + MovieContract.FavoritesEntry._ID,
             MovieContract.FavoritesEntry._ID,
-            MovieContract.FavoritesEntry.COLUMN_POSTER_PATH
+            MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL
     };
 
     private static final int MOVIE_ID_INDEX = 0;
-    private static final int MOVIE_POSTER_PATH_INDEX = 1;
+    private static final int MOVIE_POSTER_ON_DISK_URL_INDEX = 1;
 
     public interface Callback {
         /**
          * DetailFragmentCallback for when an item has been selected.
          */
-        void onItemSelected(Uri movieUri);
-        void discover(int discoveryCode);
+        void onItemSelected(Uri movieUri); // MainActivity to handle item selection
+        void discover(int discoveryCode); // MainActivity to handle fragment switching to leave favorites view
     }
 
     public DiscoveryFragment2() {
@@ -97,12 +98,7 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
                              Bundle savedInstanceState) {
 
         if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)){
-
             mPosition = savedInstanceState.getInt(SELECTED_KEY);
-
-        } else {
-            // Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
-            // Log.v(LOG_TAG, "updating movies via API call");
         }
 
         // Inflate the layout for this fragment
@@ -119,7 +115,7 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
 
                 Cursor cursor = (Cursor) adapterView.getItemAtPosition(position);
-                if (cursor !=null) {
+                if (cursor != null) {
                     // have the parent activity implement it's onItemSelected callback method
                     // passing it a Uri referencing the object from the table.
                     ((Callback) getActivity()).onItemSelected(
@@ -172,7 +168,8 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
     }
 
     public void viewFavorites() {
-        //TODO: show dem favorites
+        Toast toast = Toast.makeText(getActivity(),"These are your favorites", Toast.LENGTH_SHORT);
+        toast.show();
     }
 }
 

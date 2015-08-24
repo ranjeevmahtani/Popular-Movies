@@ -20,8 +20,9 @@ public class MovieDetailActivity extends ActionBarActivity {
             Intent intent = getIntent();
             Bundle arguments = new Bundle();
             if (intent != null && intent.hasExtra(MovieDetailFragment.MOVIE_PARCELABLE_KEY)) {
-                // this intent was sent with a movie object. pass the movie object in the bundle
-                Log.v(LOG_TAG, "getting mMovie from intent");
+                // this intent was sent with a movie object.
+                // pass the movie object in the bundle
+                Log.d(LOG_TAG, "getting mMovie from intent");
                 Movie movie = intent.getParcelableExtra(MovieDetailFragment.MOVIE_PARCELABLE_KEY);
                 arguments.putParcelable(MovieDetailFragment.MOVIE_PARCELABLE_KEY, movie);
 
@@ -30,7 +31,7 @@ public class MovieDetailActivity extends ActionBarActivity {
                 // this intent was sent with a movie Uri, and is therefore from the favorites table.
                 // pass the movie Uri in the bundle.
                 Uri movieUri = intent.getData();
-                arguments.putParcelable(MovieDetailFragment.MOVIE_URI_KEY,movieUri);
+                arguments.putParcelable(MovieDetailFragment.MOVIE_URI_KEY, movieUri);
             }
 
             MovieDetailFragment detailFragment = new MovieDetailFragment();

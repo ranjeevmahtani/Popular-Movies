@@ -41,6 +41,35 @@ public class DiscoveryFragment extends Fragment {
         setHasOptionsMenu(true);
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.menu_discoveryfragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+
+        if (id == R.id.action_discover_by_popularity) {
+            discover(DISCOVER_BY_POPULARITY_CODE);
+        }
+        else if (id == R.id.action_discover_by_user_rating) {
+            discover(DISCOVER_BY_USER_RATING_CODE);
+        }
+
+        else if (id == R.id.action_view_favorites) {
+            ((Callback)getActivity()).viewFavorites();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -64,10 +93,6 @@ public class DiscoveryFragment extends Fragment {
                 if (movie !=null) {
                     ((Callback) getActivity()).onItemSelected(movie);
                 }
-//                Parcelable movie = mMoviePosterAdapter.getItem(position);
-//                Intent intent = new Intent(getActivity(), MovieDetailActivity.class)
-//                        .putExtra("movie",movie);
-//                startActivity(intent);
             }
         };
 
@@ -121,35 +146,6 @@ public class DiscoveryFragment extends Fragment {
         // Log.v(LOG_TAG, "instanceState saved");
         // Log.v(LOG_TAG, "outState.containsKey(\"movieArray\"): "
         //        + String.valueOf(outState.containsKey("movieArray")));
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.menu_discoveryfragment, menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-
-        if (id == R.id.action_discover_by_popularity) {
-            discover(DISCOVER_BY_POPULARITY_CODE);
-        }
-        else if (id == R.id.action_discover_by_user_rating) {
-            discover(DISCOVER_BY_USER_RATING_CODE);
-        }
-
-        else if (id == R.id.action_view_favorites) {
-            ((Callback)getActivity()).viewFavorites();
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     public void discover(int discoveryCode) {

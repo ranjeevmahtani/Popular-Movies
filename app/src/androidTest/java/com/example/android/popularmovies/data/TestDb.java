@@ -88,7 +88,7 @@ public class TestDb extends AndroidTestCase {
         locationColumnHashSet.add(MovieContract.FavoritesEntry._ID);
         locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_TITLE);
         locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_RATING);
-        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH);
+        locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_TMDB_POSTER_PATH);
         locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS);
         locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE);
         locationColumnHashSet.add(MovieContract.FavoritesEntry.COLUMN_TMDB_ID);

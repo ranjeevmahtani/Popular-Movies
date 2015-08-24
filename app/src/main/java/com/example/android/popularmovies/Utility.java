@@ -1,6 +1,7 @@
 package com.example.android.popularmovies;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.util.Log;
 
@@ -21,6 +22,25 @@ import java.net.URL;
 public class Utility {
 
     final static String LOG_TAG = Utility.class.getSimpleName();
+
+    public static URL getDiscoveryQueryUrl(Context context, String sortOption) {
+        try {
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme("http")
+                    .authority("api.themoviedb.org")
+                    .appendPath("3")
+                    .appendPath("discover")
+                    .appendPath("movie")
+                    .appendQueryParameter(context.getString(R.string.API_query_sort_by), sortOption)
+                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+
+            return new URL(builder.build().toString());
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error ", e);
+            return null;
+        }
+    }
+
 
     public static URL getVideoQueryUrl(Context context, long movieId) {
         final String LOG_TAG = "getVideoQueryUrl(...)";
@@ -68,6 +88,42 @@ public class Utility {
         }
     }
 
+
+    public static Movie[] getMovieArrayFromJsonStr(String moviesDataStr) throws JSONException {
+
+        final int resultCount = 20; //20 results shown per page: initial setting
+        // These are the names of the JSON objects that need to be extracted.
+        final String TMDB_MOVIES_LIST = "results";
+        final String TMDB_MOVIE_ID = "id";
+        final String TMDB_TITLE = "original_title";
+        final String TMDB_POSTER_PATH = "poster_path";
+        final String TMDB_PLOT_SYNOPSIS = "overview";
+        final String TMDB_USER_RATING = "vote_average";
+        final String TMDB_RELEASE_DATE = "release_date";
+
+        JSONObject moviesJsonResult = new JSONObject(moviesDataStr);
+        JSONArray moviesJsonArray = moviesJsonResult.getJSONArray(TMDB_MOVIES_LIST);
+
+        //Create an array of movie objects to store relevant details from the JSON results
+        Movie[] moviesObjectArray = new Movie[resultCount];
+        //for each movie in the JSON array, create a Movie object and store the relevant details
+        for (int i = 0; i < moviesJsonArray.length(); i++) {
+            Movie movie = new Movie();
+            // Get the JSON object representing the movie
+            JSONObject movieJson = moviesJsonArray.getJSONObject(i);
+            //Set movie details to the movie object
+            movie.setTmdbId(movieJson.getInt(TMDB_MOVIE_ID));
+            movie.setMovieTitle(movieJson.getString(TMDB_TITLE));
+            movie.setMoviePosterPath(movieJson.getString(TMDB_POSTER_PATH));
+            movie.setMovieSynopsis(movieJson.getString(TMDB_PLOT_SYNOPSIS));
+            movie.setMovieUserRating(movieJson.getDouble(TMDB_USER_RATING));
+            movie.setMovieReleaseDate(movieJson.getString(TMDB_RELEASE_DATE));
+            moviesObjectArray[i] = movie;
+            //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
+        }
+        return moviesObjectArray;
+    }
+
     public static void saveMovieVideoInfo(Movie movie, URL videoQueryUrl) throws JSONException {
         final String LOG_TAG = "saveMovieVideoInfo(...)";
 
@@ -83,7 +139,7 @@ public class Utility {
                 JSONObject videosQueryResponseJson = new JSONObject(videosQueryResponseStr);
                 JSONArray videosJsonArray = videosQueryResponseJson.getJSONArray(TMDB_VIDEOS_LIST);
 
-                if(videosJsonArray.length() == 0) {
+                if (videosJsonArray.length() == 0) {
                     movie.setNoVideos();
                 } else {
                     for (int i = 0; i < videosJsonArray.length(); i++) {
@@ -159,7 +215,7 @@ public class Utility {
 
     public static String requestDataFromApi(URL queryURL) {
 
-        final String LOG_TAG = "requestDataFromApi()";
+        Log.v(LOG_TAG, "hittin up the interwebs");
 
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;
@@ -225,5 +281,12 @@ public class Utility {
         return Uri.parse(YOUTUBE_BASE_URL + videoId);
     }
 
-
+    public static boolean isOnline(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnectedOrConnecting()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

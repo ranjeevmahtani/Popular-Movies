@@ -1,16 +1,25 @@
 package com.example.android.popularmovies;
 
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
 import com.example.android.popularmovies.data.MovieContract;
+import com.squareup.picasso.Picasso;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -23,7 +32,8 @@ public class Movie implements Parcelable{
 
     private long tmdbId;
     private String title;
-    private String posterPath;
+    private String tmdbPosterPath;
+    private String mPosterOnDiskUrlStr;
     private String synopsis;
     private double userRating;
     private String releaseDate;
@@ -32,7 +42,6 @@ public class Movie implements Parcelable{
     private boolean hasReviews;
 
     private boolean isFavorite;
-    private long favoriteId;
 
     private ArrayList<String[]> videos;
     private ArrayList<String[]> reviews;
@@ -41,7 +50,7 @@ public class Movie implements Parcelable{
 
         this.tmdbId = 0;
         this.title = "unavailable";
-        this.posterPath = "unavailable";
+        this.tmdbPosterPath = "unavailable";
         this.synopsis = "unavailable";
         this.userRating = 0;
         this.releaseDate = "unavailable";
@@ -70,11 +79,11 @@ public class Movie implements Parcelable{
     }
 
     public void setMoviePosterPath(String posterPath){
-        this.posterPath = posterPath;
+        this.tmdbPosterPath = posterPath;
     }
 
     public String getMoviePosterPath(){
-        return posterPath;
+        return tmdbPosterPath;
     }
 
     public void setMovieSynopsis(String plotSynopsis){
@@ -115,6 +124,18 @@ public class Movie implements Parcelable{
 
     public boolean isFavorite() {return isFavorite;}
 
+    public void setIsFavorite(boolean isFavorite) {
+        this.isFavorite = isFavorite;
+    }
+
+    public String getPosterOnDiskUrlStr() {
+        return mPosterOnDiskUrlStr;
+    }
+
+    public void setPosterOnDiskUrlStr(String posterOnDiskUrlStr) {
+        mPosterOnDiskUrlStr = posterOnDiskUrlStr;
+    }
+
     public void addToFavorites(Context context) {
 
         // First, check if a movie with this TMDB ID exists in the db
@@ -126,76 +147,88 @@ public class Movie implements Parcelable{
                 null);
 
         if (movieCursor.moveToFirst()) {
-            int movieIdIndex = movieCursor.getColumnIndex(MovieContract.FavoritesEntry._ID);
-            this.favoriteId = movieCursor.getLong(movieIdIndex);
+            this.isFavorite = true;
         } else {
-            ContentValues movieValues = new ContentValues();
+            MyTarget target = new MyTarget(context, getTmdbId());
+            Picasso.with(context)
+                    .load(getPosterURLStr())
+                    .error(R.drawable.tough_android)
+                    .into(target);
+            target.savePosterToDisk();
+            mPosterOnDiskUrlStr = target.getPosterFileUrlStr();
+            Log.d(LOG_TAG, "mPosterOnDiskUrlStr = " + mPosterOnDiskUrlStr);
 
-            // Then add the data, along with the corresponding name of the data type,
-            // so the content provider knows what kind of value is being inserted.
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_TMDB_ID, tmdbId);
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_TITLE, title);
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_POSTER_PATH, posterPath);
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, synopsis);
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_RATING, userRating);
-            movieValues.put(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
+            if (mPosterOnDiskUrlStr != null) {
+                ContentValues movieValues = new ContentValues();
 
-            // Finally, insert movie data into the database.
-            Uri insertedUri = context.getContentResolver().insert(
-                    MovieContract.FavoritesEntry.CONTENT_URI,
-                    movieValues
-            );
+                // Then add the data, along with the corresponding name of the data type,
+                // so the content provider knows what kind of value is being inserted.
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_TMDB_ID, tmdbId);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_TITLE, title);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_TMDB_POSTER_PATH, tmdbPosterPath);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, synopsis);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_RATING, userRating);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL, mPosterOnDiskUrlStr);
 
-            // The resulting URI contains the ID for the row.  Extract the favoriteId from the Uri.
-            this.favoriteId = ContentUris.parseId(insertedUri);
+                // Finally, insert movie data into the database.
+                context.getContentResolver().insert(
+                        MovieContract.FavoritesEntry.CONTENT_URI,
+                        movieValues
+                );
 
-            Vector<ContentValues> videoCvVector = new Vector<ContentValues>(videos.size());
+                // add the videos to the videos table
+                Vector<ContentValues> videoCvVector = new Vector<ContentValues>(videos.size());
 
-            for (String[] video : videos) {
-                ContentValues videoCv = new ContentValues();
-                videoCv.put(MovieContract.VideoEntry.COLUMN_MOVIE_KEY, this.tmdbId);
-                videoCv.put(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY, video[0]);
-                videoCv.put(MovieContract.VideoEntry.COLUMN_NAME, video[1]);
+                for (String[] video : videos) {
+                    ContentValues videoCv = new ContentValues();
+                    videoCv.put(MovieContract.VideoEntry.COLUMN_MOVIE_KEY, this.tmdbId);
+                    videoCv.put(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY, video[0]);
+                    videoCv.put(MovieContract.VideoEntry.COLUMN_NAME, video[1]);
 
-                videoCvVector.add(videoCv);
+                    videoCvVector.add(videoCv);
+                }
+
+                if (videoCvVector.size() > 0) {
+                    ContentValues[] cvArray = new ContentValues[videoCvVector.size()];
+                    videoCvVector.toArray(cvArray);
+                    int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.VideoEntry.CONTENT_URI,cvArray);
+                    Log.v(LOG_TAG, "rows inserted into videos table: " + rowsInserted);
+                }
+
+                // add the reviews to the reviews table
+                Vector<ContentValues> reviewCvVector = new Vector<ContentValues>(reviews.size());
+
+                for (String[] review : reviews) {
+                    ContentValues reviewCv = new ContentValues();
+                    reviewCv.put(MovieContract.ReviewEntry.COLUMN_MOVIE_KEY, this.tmdbId);
+                    reviewCv.put(MovieContract.ReviewEntry.COLUMN_AUTHOR, review[0]);
+                    reviewCv.put(MovieContract.ReviewEntry.COLUMN_CONTENT, review[1]);
+
+                    reviewCvVector.add(reviewCv);
+                }
+
+                if (reviewCvVector.size() > 0) {
+                    ContentValues[] reviewCvArray = new ContentValues[reviewCvVector.size()];
+                    reviewCvVector.toArray(reviewCvArray);
+                    int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.ReviewEntry.CONTENT_URI,reviewCvArray);
+                    Log.v(LOG_TAG, "rows inserted into reviews table: " + rowsInserted);
+                }
+
+                this.isFavorite = true;
+
+            } else {
+                Log.e(LOG_TAG, "movie was not added to favorites");
             }
-
-            if (videoCvVector.size() > 0) {
-                ContentValues[] cvArray = new ContentValues[videoCvVector.size()];
-                videoCvVector.toArray(cvArray);
-                int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.VideoEntry.CONTENT_URI,cvArray);
-                Log.v(LOG_TAG, "rows inserted into videos table: " + rowsInserted);
-            }
-
-            Vector<ContentValues> reviewCvVector = new Vector<ContentValues>(reviews.size());
-
-            for (String[] review : reviews) {
-                ContentValues reviewCv = new ContentValues();
-                reviewCv.put(MovieContract.ReviewEntry.COLUMN_MOVIE_KEY, this.tmdbId);
-                reviewCv.put(MovieContract.ReviewEntry.COLUMN_AUTHOR, review[0]);
-                reviewCv.put(MovieContract.ReviewEntry.COLUMN_CONTENT, review[1]);
-
-                reviewCvVector.add(reviewCv);
-            }
-
-            if (reviewCvVector.size() > 0) {
-                ContentValues[] reviewCvArray = new ContentValues[reviewCvVector.size()];
-                reviewCvVector.toArray(reviewCvArray);
-                int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.ReviewEntry.CONTENT_URI,reviewCvArray);
-                Log.v(LOG_TAG, "rows inserted into reviews table: " + rowsInserted);
-            }
+            movieCursor.close();
         }
-
-        movieCursor.close();
-
-        this.isFavorite = true;
     }
 
     public void removeFromFavorites(Context context) {
 
         Cursor cursor = context.getContentResolver().query(
                 MovieContract.FavoritesEntry.CONTENT_URI,
-                new String[]{MovieContract.FavoritesEntry._ID},
+                new String[]{MovieContract.FavoritesEntry.COLUMN_TMDB_ID},
                 MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
                 new String[]{String.valueOf(this.tmdbId)},
                 null);
@@ -207,35 +240,50 @@ public class Movie implements Parcelable{
                     MovieContract.FavoritesEntry.COLUMN_TMDB_ID + "=?",
                     new String[]{String.valueOf(this.tmdbId)});
 
-            this.isFavorite=false;
-
-            String movieId = cursor.getString(0);
+            String movieTmdbId = cursor.getString(0);
 
             //delete any saved videos for this movie from the videos table
-            context.getContentResolver().delete(
+            int videosDeletedCount = context.getContentResolver().delete(
                     MovieContract.VideoEntry.CONTENT_URI,
                     MovieContract.VideoEntry.COLUMN_MOVIE_KEY + "=?",
-                    new String[]{movieId});
+                    new String[]{movieTmdbId});
+
+            Log.d(LOG_TAG, videosDeletedCount + " videos deleted for this movie");
 
             //delete any saved reviews for this movie from the videos table
             context.getContentResolver().delete(
                     MovieContract.ReviewEntry.CONTENT_URI,
                     MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
-                    new String[]{movieId});
+                    new String[]{movieTmdbId});
         }
+
+        // Delete the poster file saved on the disk.
+        if (mPosterOnDiskUrlStr != null) {
+            File posterFileOnDisk = new File(mPosterOnDiskUrlStr);
+            posterFileOnDisk.delete();
+        }
+
+        this.isFavorite=false;
+        this.mPosterOnDiskUrlStr = null;
 
         cursor.close();
     }
 
-    public String getPosterURL(){
-        Uri.Builder builder = new Uri.Builder();
-        builder.scheme("http")
-                .authority("image.tmdb.org")
-                .appendPath("t")
-                .appendPath("p")
-                .appendPath("w185");
+    public String getPosterURLStr(){
 
-        return builder.build().toString() + posterPath;
+        if(mPosterOnDiskUrlStr != null) {
+            return mPosterOnDiskUrlStr;
+
+        } else {
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme("http")
+                    .authority("image.tmdb.org")
+                    .appendPath("t")
+                    .appendPath("p")
+                    .appendPath("w185");
+
+            return builder.build().toString() + tmdbPosterPath;
+        }
     }
 
     /* Store information pertaining to videos related to this movie.
@@ -289,7 +337,7 @@ public class Movie implements Parcelable{
 
     public void setNoVideos() {
         this.videos.clear();
-        this.hasReviews = false;
+        this.hasVideos = false;
     }
 
     public void setNoReviews() {
@@ -304,14 +352,14 @@ public class Movie implements Parcelable{
     public void writeToParcel(Parcel out, int flags){
         out.writeLong(tmdbId);
         out.writeString(title);
-        out.writeString(posterPath);
+        out.writeString(tmdbPosterPath);
+        out.writeString(mPosterOnDiskUrlStr);
         out.writeString(synopsis);
         out.writeDouble(userRating);
         out.writeString(releaseDate);
         out.writeByte((byte) (hasVideos ? 1 : 0));
         out.writeByte((byte) (hasReviews ? 1 : 0));
         out.writeByte((byte) (isFavorite? 1 : 0));
-        out.writeLong(favoriteId);
         if (videos == null) {
             out.writeByte((byte) (0));
         } else {
@@ -341,14 +389,14 @@ public class Movie implements Parcelable{
     private Movie(Parcel in){
         tmdbId = in.readLong();
         title = in.readString();
-        posterPath = in.readString();
+        tmdbPosterPath = in.readString();
+        mPosterOnDiskUrlStr = in.readString();
         synopsis = in.readString();
         userRating = in.readDouble();
         releaseDate = in.readString();
         hasVideos = in.readByte() != 0;
         hasReviews = in.readByte() != 0;
         isFavorite = in.readByte() != 0;
-        favoriteId = in.readLong();
         if (in.readByte() == 1) {
             videos = new ArrayList<String[]>();
             in.readList(videos, String[].class.getClassLoader());
@@ -362,5 +410,86 @@ public class Movie implements Parcelable{
             reviews = null;
         }
     }
+}
 
+class MyTarget implements com.squareup.picasso.Target{
+
+    private final String LOG_TAG = MyTarget.class.getSimpleName();
+
+    Context mContext;
+    Long mTmdbId;
+    Bitmap mBitmap;
+    File mPosterPngFile;
+
+    public MyTarget(Context context, Long tmdbId){
+        mContext = context;
+        mTmdbId = tmdbId;
+    }
+
+    @Override
+    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+        mBitmap = bitmap;
+    }
+
+    @Override
+    public void onBitmapFailed(Drawable drawable) {
+        mBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.tough_android);
+        Log.e(LOG_TAG, "Picasso failed to load the bitmap");
+    }
+
+    @Override
+    public void onPrepareLoad(Drawable drawable) {
+    }
+
+    public void savePosterToDisk() {
+
+        if (mBitmap != null) {
+            File directory = mContext.getFilesDir();
+            String fileName = String.valueOf(mTmdbId)+"_poster";
+            mPosterPngFile = new File(directory, fileName);
+            OutputStream outStream = null;
+
+            try {
+                outStream = new BufferedOutputStream(new FileOutputStream(mPosterPngFile));
+                mBitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+            } catch (FileNotFoundException e) {
+                Log.e(LOG_TAG, e.getMessage());
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (outStream != null) {
+                        outStream.close();
+                    }
+                } catch (java.io.IOException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            Log.e(LOG_TAG, "Unable to save poster to disk.");
+        }
+    }
+
+    // returns a String of the URL representing the poster PNG file saved on the disk
+    public String getPosterFileUrlStr() {
+
+        if (mPosterPngFile != null) {
+            String posterUrlStr = null;
+            try {
+                posterUrlStr =  mPosterPngFile.toURI().toURL().toString();
+            } catch (MalformedURLException e) {
+                Log.e(LOG_TAG, e.getMessage());
+                e.printStackTrace();
+            }
+            if (posterUrlStr != null){
+                return posterUrlStr;
+            } else {
+                Log.e(LOG_TAG, "posterUrlStr was null");
+                return null;
+            }
+        } else {
+            Log.e(LOG_TAG, "Unable to get Url for poster file on disk.");
+        }
+        return null;
+    }
 }

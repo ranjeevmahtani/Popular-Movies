@@ -43,13 +43,15 @@ public class MovieContract {
 
         public static final String COLUMN_TITLE = "original_title";
 
-        public static final String COLUMN_POSTER_PATH = "poster_path";
+        public static final String COLUMN_TMDB_POSTER_PATH = "tmdb_poster_path";
 
         public static final String COLUMN_PLOT_SYNOPSIS = "overview";
 
         public static final String COLUMN_RATING = "vote_average";
 
         public static final String COLUMN_RELEASE_DATE = "release_date";
+
+        public static final String COLUMN_POSTER_FILE_ON_DISK_URL = "poster_file_on_disk_url";
 
         public static Uri buildFavoriteMovieUri(long id) {
             Log.d("MovieContract Class", "Uri buildFavoriteMovieUri(long id) = " + ContentUris.withAppendedId(CONTENT_URI, id));
