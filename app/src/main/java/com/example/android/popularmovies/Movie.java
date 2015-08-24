@@ -4,7 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Parcel;
@@ -12,7 +12,6 @@ import android.os.Parcelable;
 import android.util.Log;
 
 import com.example.android.popularmovies.data.MovieContract;
-import com.squareup.picasso.Picasso;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -136,7 +135,7 @@ public class Movie implements Parcelable{
         mPosterOnDiskUrlStr = posterOnDiskUrlStr;
     }
 
-    public void addToFavorites(Context context) {
+    public void addToFavorites(Context context, Drawable posterDrawable) {
 
         // First, check if a movie with this TMDB ID exists in the db
         Cursor movieCursor = context.getContentResolver().query(
@@ -149,14 +148,19 @@ public class Movie implements Parcelable{
         if (movieCursor.moveToFirst()) {
             this.isFavorite = true;
         } else {
-            MyTarget target = new MyTarget(context, getTmdbId());
-            Picasso.with(context)
-                    .load(getPosterURLStr())
-                    .error(R.drawable.tough_android)
-                    .into(target);
-            target.savePosterToDisk();
-            mPosterOnDiskUrlStr = target.getPosterFileUrlStr();
+
+            mPosterOnDiskUrlStr = savePosterToDisk(context, posterDrawable);
             Log.d(LOG_TAG, "mPosterOnDiskUrlStr = " + mPosterOnDiskUrlStr);
+
+
+//            MyTarget target = new MyTarget(context, getTmdbId(), posterDrawable);
+//            Picasso.with(context)
+//                    .load(getPosterURLStr())
+//                    .error(R.drawable.tough_android)
+//                    .into(target);
+//            target.savePosterToDisk();
+//            mPosterOnDiskUrlStr = target.getPosterFileUrlStr();
+//            Log.d(LOG_TAG, "mPosterOnDiskUrlStr = " + mPosterOnDiskUrlStr);
 
             if (mPosterOnDiskUrlStr != null) {
                 ContentValues movieValues = new ContentValues();
@@ -345,6 +349,42 @@ public class Movie implements Parcelable{
         this.hasReviews = false;
     }
 
+    public String savePosterToDisk(Context context, Drawable posterDrawable) {
+
+        Bitmap posterBmp = ((BitmapDrawable)posterDrawable).getBitmap();
+
+        if (posterBmp != null) {
+            File directory = context.getFilesDir();
+            String fileName = String.valueOf(this.tmdbId)+"_poster";
+            File posterPngFile = new File(directory, fileName);
+            OutputStream outStream = null;
+
+            try {
+                outStream = new BufferedOutputStream(new FileOutputStream(posterPngFile));
+                posterBmp.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+                return posterPngFile.toURI().toURL().toString();
+            } catch (FileNotFoundException e) {
+                Log.e(LOG_TAG, e.getMessage());
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                Log.e(LOG_TAG, e.getMessage());
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (outStream != null) {
+                        outStream.close();
+                    }
+                } catch (java.io.IOException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            Log.e(LOG_TAG, "Unable to save poster to disk.");
+        }
+        return null;
+    }
+
     public int describeContents(){
         return 0;
     }
@@ -412,84 +452,86 @@ public class Movie implements Parcelable{
     }
 }
 
-class MyTarget implements com.squareup.picasso.Target{
-
-    private final String LOG_TAG = MyTarget.class.getSimpleName();
-
-    Context mContext;
-    Long mTmdbId;
-    Bitmap mBitmap;
-    File mPosterPngFile;
-
-    public MyTarget(Context context, Long tmdbId){
-        mContext = context;
-        mTmdbId = tmdbId;
-    }
-
-    @Override
-    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
-        mBitmap = bitmap;
-    }
-
-    @Override
-    public void onBitmapFailed(Drawable drawable) {
-        mBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.tough_android);
-        Log.e(LOG_TAG, "Picasso failed to load the bitmap");
-    }
-
-    @Override
-    public void onPrepareLoad(Drawable drawable) {
-    }
-
-    public void savePosterToDisk() {
-
-        if (mBitmap != null) {
-            File directory = mContext.getFilesDir();
-            String fileName = String.valueOf(mTmdbId)+"_poster";
-            mPosterPngFile = new File(directory, fileName);
-            OutputStream outStream = null;
-
-            try {
-                outStream = new BufferedOutputStream(new FileOutputStream(mPosterPngFile));
-                mBitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-            } catch (FileNotFoundException e) {
-                Log.e(LOG_TAG, e.getMessage());
-                e.printStackTrace();
-            } finally {
-                try {
-                    if (outStream != null) {
-                        outStream.close();
-                    }
-                } catch (java.io.IOException e) {
-                    Log.e(LOG_TAG, e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            Log.e(LOG_TAG, "Unable to save poster to disk.");
-        }
-    }
-
-    // returns a String of the URL representing the poster PNG file saved on the disk
-    public String getPosterFileUrlStr() {
-
-        if (mPosterPngFile != null) {
-            String posterUrlStr = null;
-            try {
-                posterUrlStr =  mPosterPngFile.toURI().toURL().toString();
-            } catch (MalformedURLException e) {
-                Log.e(LOG_TAG, e.getMessage());
-                e.printStackTrace();
-            }
-            if (posterUrlStr != null){
-                return posterUrlStr;
-            } else {
-                Log.e(LOG_TAG, "posterUrlStr was null");
-                return null;
-            }
-        } else {
-            Log.e(LOG_TAG, "Unable to get Url for poster file on disk.");
-        }
-        return null;
-    }
-}
+//class MyTarget implements com.squareup.picasso.Target{
+//
+//    private final String LOG_TAG = MyTarget.class.getSimpleName();
+//
+//    Context mContext;
+//    Long mTmdbId;
+//    Drawable mPosterDrawable;
+//    Bitmap mBitmap;
+//    File mPosterPngFile;
+//
+//    public MyTarget(Context context, Long tmdbId, Drawable posterDrawable){
+//        mContext = context;
+//        mTmdbId = tmdbId;
+//        mPosterDrawable = posterDrawable;
+//    }
+//
+//    @Override
+//    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
+//        mBitmap = bitmap;
+//    }
+//
+//    @Override
+//    public void onBitmapFailed(Drawable drawable) {
+//        mBitmap = BitmapFactory.decodeResource(mContext.getResources(), R.drawable.tough_android);
+//        Log.e(LOG_TAG, "Picasso failed to load the bitmap");
+//    }
+//
+//    @Override
+//    public void onPrepareLoad(Drawable drawable) {
+//    }
+//
+//    public void savePosterToDisk() {
+//
+//        if (mBitmap != null) {
+//            File directory = mContext.getFilesDir();
+//            String fileName = String.valueOf(mTmdbId)+"_poster";
+//            mPosterPngFile = new File(directory, fileName);
+//            OutputStream outStream = null;
+//
+//            try {
+//                outStream = new BufferedOutputStream(new FileOutputStream(mPosterPngFile));
+//                mBitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+//            } catch (FileNotFoundException e) {
+//                Log.e(LOG_TAG, e.getMessage());
+//                e.printStackTrace();
+//            } finally {
+//                try {
+//                    if (outStream != null) {
+//                        outStream.close();
+//                    }
+//                } catch (java.io.IOException e) {
+//                    Log.e(LOG_TAG, e.getMessage());
+//                    e.printStackTrace();
+//                }
+//            }
+//        } else {
+//            Log.e(LOG_TAG, "Unable to save poster to disk.");
+//        }
+//    }
+//
+//    // returns a String of the URL representing the poster PNG file saved on the disk
+//    public String getPosterFileUrlStr() {
+//
+//        if (mPosterPngFile != null) {
+//            String posterUrlStr = null;
+//            try {
+//                posterUrlStr =  mPosterPngFile.toURI().toURL().toString();
+//            } catch (MalformedURLException e) {
+//                Log.e(LOG_TAG, e.getMessage());
+//                e.printStackTrace();
+//            }
+//            if (posterUrlStr != null){
+//                return posterUrlStr;
+//            } else {
+//                Log.e(LOG_TAG, "posterUrlStr was null");
+//                return null;
+//            }
+//        } else {
+//            Log.e(LOG_TAG, "Unable to get Url for poster file on disk.");
+//        }
+//        return null;
+//    }
+//}

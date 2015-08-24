@@ -2,6 +2,7 @@ package com.example.android.popularmovies;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -44,6 +45,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     private LinearLayout mLinearLayout;
     private ViewGroup mContainer;
     private Movie mMovie;
+    private Drawable mPosterDrawable;
 
     private ShareActionProvider mShareActionProvider;
     private String mShareVideoUrlStr;
@@ -241,9 +243,12 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
 
-                    mMovie.addToFavorites(getActivity());
+                    // mMovie.addToFavorites(getActivity());
+                    if (mPosterDrawable != null) {
+                        mMovie.addToFavorites(getActivity(), mPosterDrawable);
+                    }
 
-                    Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
+                    //Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
 
 //                    Cursor cursor = getActivity().getContentResolver().query(
 //                            MovieContract.FavoritesEntry.CONTENT_URI,
@@ -261,11 +266,10 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 //                    cursor.close();
 //                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
 
-                    // this is a backup since there's currently an unresolved bug:
-                    // if the user tries to favorite a movie while offline and the poster isn't cached, the movie won't be favorited
+                    // in case we weren't able to mark this movie as favorite
                     if (!mMovie.isFavorite()) {
                         buttonView.setChecked(false);
-                        Toast toast = Toast.makeText(getActivity(), "Sorry, you can't favorite this movie while offline", Toast.LENGTH_SHORT);
+                        Toast toast = Toast.makeText(getActivity(), "Sorry, this movie could not be added to favorites at this time.", Toast.LENGTH_SHORT);
                         toast.show();
                     }
 
@@ -293,6 +297,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
 
         ImageView imageView = (ImageView) (rootView.findViewById(R.id.movie_thumbnail));
         Picasso.with(getActivity()).load(mMovie.getPosterURLStr()).into(imageView);
+        mPosterDrawable = imageView.getDrawable();
 
         ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText(
                 "Release Date: " + mMovie.getMovieReleaseDate());
