@@ -36,6 +36,7 @@ public class Movie implements Parcelable{
     private String synopsis;
     private double userRating;
     private String releaseDate;
+    private int voteCount;
 
     private boolean hasVideos;
     private boolean hasReviews;
@@ -103,6 +104,14 @@ public class Movie implements Parcelable{
 
     public void setMovieReleaseDate(String movieReleaseDate){
         this.releaseDate = movieReleaseDate;
+    }
+
+    public int getVoteCount() {
+        return voteCount;
+    }
+
+    public void setVoteCount(int voteCount) {
+        this.voteCount = voteCount;
     }
 
     public long getTmdbId() {
@@ -173,6 +182,7 @@ public class Movie implements Parcelable{
                 movieValues.put(MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS, synopsis);
                 movieValues.put(MovieContract.FavoritesEntry.COLUMN_RATING, userRating);
                 movieValues.put(MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE, releaseDate);
+                movieValues.put(MovieContract.FavoritesEntry.COLUMN_VOTE_COUNT, voteCount);
                 movieValues.put(MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL, mPosterOnDiskUrlStr);
 
                 // Finally, insert movie data into the database.
@@ -252,14 +262,14 @@ public class Movie implements Parcelable{
                     MovieContract.VideoEntry.COLUMN_MOVIE_KEY + "=?",
                     new String[]{movieTmdbId});
 
-            Log.d(LOG_TAG, videosDeletedCount + " videos deleted for this movie");
+            //Log.d(LOG_TAG, videosDeletedCount + " videos deleted for this movie");
 
             //delete any saved reviews for this movie from the videos table
             int reviewsDeletedCount = context.getContentResolver().delete(
                     MovieContract.ReviewEntry.CONTENT_URI,
                     MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
                     new String[]{movieTmdbId});
-            Log.d(LOG_TAG, reviewsDeletedCount + " reviews deleted for this movie");
+            //Log.d(LOG_TAG, reviewsDeletedCount + " reviews deleted for this movie");
         }
 
         // Delete the poster file saved on the disk.
@@ -398,6 +408,7 @@ public class Movie implements Parcelable{
         out.writeString(synopsis);
         out.writeDouble(userRating);
         out.writeString(releaseDate);
+        out.writeInt(voteCount);
         out.writeByte((byte) (hasVideos ? 1 : 0));
         out.writeByte((byte) (hasReviews ? 1 : 0));
         out.writeByte((byte) (isFavorite? 1 : 0));
@@ -435,6 +446,7 @@ public class Movie implements Parcelable{
         synopsis = in.readString();
         userRating = in.readDouble();
         releaseDate = in.readString();
+        voteCount = in.readInt();
         hasVideos = in.readByte() != 0;
         hasReviews = in.readByte() != 0;
         isFavorite = in.readByte() != 0;

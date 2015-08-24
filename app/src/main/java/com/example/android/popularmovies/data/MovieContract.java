@@ -53,6 +53,8 @@ public class MovieContract {
 
         public static final String COLUMN_POSTER_FILE_ON_DISK_URL = "poster_file_on_disk_url";
 
+        public static final String COLUMN_VOTE_COUNT = "vote_count";
+
         public static Uri buildFavoriteMovieUri(long id) {
             Log.d("MovieContract Class", "Uri buildFavoriteMovieUri(long id) = " + ContentUris.withAppendedId(CONTENT_URI, id));
             return ContentUris.withAppendedId(CONTENT_URI, id);

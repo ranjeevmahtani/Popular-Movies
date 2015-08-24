@@ -356,8 +356,11 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         ((TextView) (rootView.findViewById(R.id.movie_release_date))).setText(
                 "Release Date: " + mMovie.getMovieReleaseDate());
 
-        ((TextView) (rootView.findViewById(R.id.movie_rating))).setText
-                        ("Viewer Rating: " + String.valueOf(mMovie.getMovieUserRating()) + "/10");
+        ((TextView) (rootView.findViewById(R.id.movie_rating))).setText(
+                "Viewer Rating: " + String.valueOf(mMovie.getMovieUserRating()) + "/10");
+
+        ((TextView) (rootView.findViewById(R.id.vote_count))).setText(
+                "Ratings: " + String.valueOf(mMovie.getVoteCount()));
 
         ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(mMovie.getMovieSynopsis());
 

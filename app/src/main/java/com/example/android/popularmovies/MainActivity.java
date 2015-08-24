@@ -8,7 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class MainActivity extends ActionBarActivity implements DiscoveryFragment.Callback, DiscoveryFragment2.Callback {
+public class MainActivity extends ActionBarActivity implements DiscoveryFragment.Callback, FavoritesFragment.Callback {
 
     private static final String BROWSERFRAGMENT_TAG = "BFTAG";
     private static final String DETAILFRAGMENT_TAG = "DFTAG";
@@ -117,12 +117,12 @@ public class MainActivity extends ActionBarActivity implements DiscoveryFragment
 
         if (!mTwoPane) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.movie_discovery_container, new DiscoveryFragment2(), BROWSERFRAGMENT_TAG)
+                    .replace(R.id.movie_discovery_container, new FavoritesFragment(), BROWSERFRAGMENT_TAG)
                     .addToBackStack(null)
                     .commit();
         } else {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.movie_discovery_container, new DiscoveryFragment2(), BROWSERFRAGMENT_TAG)
+                    .replace(R.id.movie_discovery_container, new FavoritesFragment(), BROWSERFRAGMENT_TAG)
                     .replace(R.id.movie_detail_container, new MovieDetailFragment(), DETAILFRAGMENT_TAG)
                     .addToBackStack(null)
                     .commit();

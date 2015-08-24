@@ -26,6 +26,8 @@ public class DiscoveryFragment extends Fragment {
     public static final String DISCOVERY_CODE_KEY = "discoveryCode";
     public static final int DISCOVER_BY_POPULARITY_CODE = 100;
     public static final int DISCOVER_BY_USER_RATING_CODE = 101;
+    public static final int DISCOVER_NOW_PLAYING_CODE = 102;
+    public static final int DISCOVER_UPCOMING_CODE = 103;
 
     private MoviePosterAdapter mMoviePosterAdapter;
 
@@ -56,13 +58,18 @@ public class DiscoveryFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
 
-        if (id == R.id.action_discover_by_popularity) {
+        if (id == R.id.action_now_playing) {
+            discover(DISCOVER_NOW_PLAYING_CODE);
+        }
+        else if (id == R.id.action_upcoming) {
+            discover(DISCOVER_UPCOMING_CODE);
+        }
+        else if (id == R.id.action_discover_by_popularity) {
             discover(DISCOVER_BY_POPULARITY_CODE);
         }
         else if (id == R.id.action_discover_by_user_rating) {
             discover(DISCOVER_BY_USER_RATING_CODE);
         }
-
         else if (id == R.id.action_view_favorites) {
             ((Callback)getActivity()).viewFavorites();
         }
@@ -122,7 +129,7 @@ public class DiscoveryFragment extends Fragment {
             if (arguments != null && arguments.containsKey(DISCOVERY_CODE_KEY)) {
                 discover(arguments.getInt(DISCOVERY_CODE_KEY));
             } else {
-                discover(DISCOVER_BY_POPULARITY_CODE);
+                discover(DISCOVER_NOW_PLAYING_CODE);
             }
         }
 
@@ -152,6 +159,14 @@ public class DiscoveryFragment extends Fragment {
         FetchMoviesTask moviesTask = new FetchMoviesTask(getActivity(), mMoviePosterAdapter);
 
         switch (discoveryCode) {
+            case DISCOVER_NOW_PLAYING_CODE: {
+                moviesTask.execute(getString(R.string.API_param_now_playing));
+                break;
+            }
+            case DISCOVER_UPCOMING_CODE: {
+                moviesTask.execute(getString(R.string.API_param_upcoming));
+                break;
+            }
             case DISCOVER_BY_POPULARITY_CODE: {
                 moviesTask.execute(getString(R.string.API_param_descending_popularity));
                 break;
@@ -161,7 +176,7 @@ public class DiscoveryFragment extends Fragment {
                 break;
             }
             default: {
-                moviesTask.execute(getString(R.string.API_param_descending_popularity));
+                moviesTask.execute(getString(R.string.API_param_now_playing));
             }
         }
     }

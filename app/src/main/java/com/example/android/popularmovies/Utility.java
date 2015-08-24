@@ -28,11 +28,20 @@ public class Utility {
             Uri.Builder builder = new Uri.Builder();
             builder.scheme("http")
                     .authority("api.themoviedb.org")
-                    .appendPath("3")
-                    .appendPath("discover")
-                    .appendPath("movie")
-                    .appendQueryParameter(context.getString(R.string.API_query_sort_by), sortOption)
-                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+                    .appendPath("3");
+
+            if (sortOption.equals(context.getString(R.string.API_param_now_playing))
+                    || sortOption.equals(context.getString(R.string.API_param_upcoming))) {
+                builder.appendPath("movie")
+                        .appendPath(sortOption);
+            } else {
+                builder.appendPath("discover")
+                        .appendPath("movie")
+                        .appendQueryParameter(context.getString(R.string.API_query_sort_by), sortOption)
+                        .appendQueryParameter("vote_count.gte", "25"); // hard-coded minimum vote count
+            }
+
+            builder.appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
 
             return new URL(builder.build().toString());
         } catch (IOException e) {
@@ -100,6 +109,7 @@ public class Utility {
         final String TMDB_PLOT_SYNOPSIS = "overview";
         final String TMDB_USER_RATING = "vote_average";
         final String TMDB_RELEASE_DATE = "release_date";
+        final String TMDB_VOTE_COUNT = "vote_count";
 
         JSONObject moviesJsonResult = new JSONObject(moviesDataStr);
         JSONArray moviesJsonArray = moviesJsonResult.getJSONArray(TMDB_MOVIES_LIST);
@@ -118,6 +128,7 @@ public class Utility {
             movie.setMovieSynopsis(movieJson.getString(TMDB_PLOT_SYNOPSIS));
             movie.setMovieUserRating(movieJson.getDouble(TMDB_USER_RATING));
             movie.setMovieReleaseDate(movieJson.getString(TMDB_RELEASE_DATE));
+            movie.setVoteCount(movieJson.getInt(TMDB_VOTE_COUNT));
             moviesObjectArray[i] = movie;
             //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
         }

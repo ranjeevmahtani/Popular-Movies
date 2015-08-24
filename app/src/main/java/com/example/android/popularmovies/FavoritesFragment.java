@@ -24,9 +24,9 @@ import com.example.android.popularmovies.data.MovieContract;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class DiscoveryFragment2 extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class FavoritesFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private final String LOG_TAG = DiscoveryFragment2.class.getSimpleName();
+    private final String LOG_TAG = FavoritesFragment.class.getSimpleName();
 
     private MoviePosterDbAdapter mMoviePosterAdapter;
 
@@ -38,7 +38,6 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
     private static final int DISCOVERY_LOADER = 0;
 
     private static final String[] DISCOVERY_COLUMNS = {
-        //MovieContract.FavoritesEntry.TABLE_NAME + "." + MovieContract.FavoritesEntry._ID,
             MovieContract.FavoritesEntry._ID,
             MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL
     };
@@ -54,7 +53,7 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
         void discover(int discoveryCode); // MainActivity to handle fragment switching to leave favorites view
     }
 
-    public DiscoveryFragment2() {
+    public FavoritesFragment() {
         // Required empty public constructor
     }
 
@@ -77,9 +76,13 @@ public class DiscoveryFragment2 extends Fragment implements LoaderManager.Loader
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-
-        if (id == R.id.action_discover_by_popularity) {
+        if (id == R.id.action_now_playing) {
+            ((Callback) getActivity()).discover(DiscoveryFragment.DISCOVER_NOW_PLAYING_CODE);
+        }
+        else if (id == R.id.action_upcoming) {
+            ((Callback) getActivity()).discover(DiscoveryFragment.DISCOVER_UPCOMING_CODE);
+        }
+        else if (id == R.id.action_discover_by_popularity) {
             ((Callback) getActivity()).discover(DiscoveryFragment.DISCOVER_BY_POPULARITY_CODE);
         }
         else if (id == R.id.action_discover_by_user_rating) {
