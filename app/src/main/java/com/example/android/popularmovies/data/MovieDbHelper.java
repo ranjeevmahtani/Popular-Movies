@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class MovieDbHelper extends SQLiteOpenHelper{
 
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
 
     static final String DATABASE_NAME = "movies.db";
 
@@ -31,6 +31,15 @@ public class MovieDbHelper extends SQLiteOpenHelper{
                          MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL + " STRING NOT NULL," +
                          MovieContract.FavoritesEntry.COLUMN_VOTE_COUNT + " INTEGER NOT NULL" +
                          ");";
+
+        final String SQL_CREATE_CAST_TABLE =
+                "CREATE TABLE " + MovieContract.CastEntry.TABLE_NAME + " (" +
+                        MovieContract.CastEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        MovieContract.CastEntry.COLUMN_MOVIE_KEY + " INTEGER NOT NULL, " +
+                        MovieContract.CastEntry.COLUMN_CAST_MEMBER + " STRING NOT NULL," +
+                        " FOREIGN KEY (" + MovieContract.CastEntry.COLUMN_MOVIE_KEY + ") REFERENCES " +
+                        MovieContract.FavoritesEntry.TABLE_NAME + " (" + MovieContract.FavoritesEntry.COLUMN_TMDB_ID + ") " +
+                        " );";
 
         final String SQL_CREATE_VIDEOS_TABLE =
                 "CREATE TABLE " + MovieContract.VideoEntry.TABLE_NAME + " (" +
@@ -64,6 +73,7 @@ public class MovieDbHelper extends SQLiteOpenHelper{
                         ");";
 
         sqLiteDatabase.execSQL(SQL_CREATE_FAVORITE_MOVIES_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_CAST_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_VIDEOS_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_REVIEWS_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_MOVIES_TABLE);
@@ -82,6 +92,7 @@ public class MovieDbHelper extends SQLiteOpenHelper{
         // should be your top priority before modifying this method.
 
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.FavoritesEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.CastEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.VideoEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.ReviewEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MovieContract.MovieEntry.TABLE_NAME);

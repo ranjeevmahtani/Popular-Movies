@@ -46,6 +46,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
     private ViewGroup mContainer;
     private Movie mMovie;
     private Drawable mPosterDrawable;
+    private TextView mCastTextView;
 
     private ShareActionProvider mShareActionProvider;
     private String mShareVideoUrlStr;
@@ -106,50 +107,9 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 if (favoriteCursor.moveToFirst()) {
                     //mark it so
                     mMovie.setIsFavorite(true);
-
-                    // query the videos table to see if this favorite movie has any videos
-                    Cursor videosCursor = getActivity().getContentResolver().query(
-                            MovieContract.VideoEntry.CONTENT_URI,
-                            null,
-                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY + "=?",
-                            new String[]{String.valueOf(mMovie.getTmdbId())},
-                            null
-                    );
-                    //if it does
-                    if (videosCursor.moveToFirst()) {
-                        // add them all to the movie object
-                        do {
-                            String[] video =
-                                    {videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY)),
-                                     videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_NAME))
-                                    };
-                            mMovie.addVideo(video);
-
-                        } while (videosCursor.moveToNext());
-                    }
-                    videosCursor.close();
-
-                    //query the reviews table to see if this favorite movie has any reviews
-                    Cursor reviewsCursor = getActivity().getContentResolver().query(
-                            MovieContract.ReviewEntry.CONTENT_URI,
-                            null,
-                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
-                            new String[]{String.valueOf(mMovie.getTmdbId())},
-                            null
-                    );
-
-                    // if it does
-                    if (reviewsCursor.moveToFirst()) {
-                        //add them all to the movie object
-                        do {
-                            String[] review =
-                                    {reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_AUTHOR)),
-                                     reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_CONTENT))
-                                    };
-                            mMovie.addReview(review);
-                        } while (reviewsCursor.moveToNext());
-                    }
-                    reviewsCursor.close();
+                    setMovieObjectCastMembersFromDb();
+                    setMovieObjectVideosFromDb();
+                    setMovieObjectReviewsFromDb();
                 } else {
                     mMovie.setIsFavorite(false);
                 }
@@ -162,112 +122,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 Log.d(LOG_TAG, "creating a movie object from info obtained via db query");
                 Uri movieUri = arguments.getParcelable(MOVIE_URI_KEY);
 
-
-                final String[] movieProjection = {
-                        MovieContract.FavoritesEntry.COLUMN_TMDB_ID,
-                        MovieContract.FavoritesEntry.COLUMN_TITLE,
-                        MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS,
-                        MovieContract.FavoritesEntry.COLUMN_TMDB_POSTER_PATH,
-                        MovieContract.FavoritesEntry.COLUMN_RATING,
-                        MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE,
-                        MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL,
-                };
-                final int TMDB_ID_IDX = 0;
-                final int TITLE_IDX = 1;
-                final int SYNOPSIS_IDX = 2;
-                final int POSTER_PATH_IDX = 3;
-                final int RATING_IDX = 4;
-                final int RELEASE_DATE_IDX = 5;
-                final int POSTER_ON_DISK_URL_IDX = 6;
-
-                long favoriteMovie_id = MovieContract.FavoritesEntry.getMovieIdFromUri(movieUri);
-                Cursor movieCursor = getActivity().getContentResolver().query(
-                        MovieContract.FavoritesEntry.CONTENT_URI,
-                        movieProjection,
-                        MovieContract.FavoritesEntry._ID + "=?",
-                        new String[]{String.valueOf(favoriteMovie_id)},
-                        null);
-                if (movieCursor.moveToFirst()) {
-                    //create the movie object and set it's basic values
-                    mMovie = new Movie();
-                    mMovie.setMovieTitle(movieCursor.getString(TITLE_IDX));
-                    mMovie.setMoviePosterPath(movieCursor.getString(POSTER_PATH_IDX));
-                    mMovie.setMovieReleaseDate(movieCursor.getString(RELEASE_DATE_IDX));
-                    mMovie.setMovieSynopsis(movieCursor.getString(SYNOPSIS_IDX));
-                    mMovie.setTmdbId(movieCursor.getInt(TMDB_ID_IDX));
-                    mMovie.setMovieUserRating(movieCursor.getDouble(RATING_IDX));
-                    mMovie.setPosterOnDiskUrlStr(movieCursor.getString(POSTER_ON_DISK_URL_IDX));
-                    mMovie.setIsFavorite(true);
-
-                    movieCursor.close();
-
-                    // get videos and reviews from db if they exist and add them to the movie
-                    final String[] videoProjection = new String[] {
-                            MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY,
-                            MovieContract.VideoEntry.COLUMN_NAME
-                    };
-                    final int YOUTUBE_KEY_IDX = 0;
-                    final int NAME_IDX = 1;
-
-                    Cursor videosCursor = getActivity().getContentResolver().query(
-                            MovieContract.VideoEntry.CONTENT_URI,
-                            videoProjection,
-                            MovieContract.VideoEntry.COLUMN_MOVIE_KEY +"=?",
-                            new String[]{String.valueOf(mMovie.getTmdbId())},
-                            null
-                    );
-                    if (videosCursor.moveToFirst()) {
-                        Log.d(LOG_TAG, "found a video for this favorite movie in the db");
-                        mMovie.addVideo(new String[]{
-                                videosCursor.getString(YOUTUBE_KEY_IDX),
-                                videosCursor.getString(NAME_IDX)
-                        });
-                        while (videosCursor.moveToNext()) {
-                            mMovie.addVideo(new String[]{
-                                    videosCursor.getString(YOUTUBE_KEY_IDX),
-                                    videosCursor.getString(NAME_IDX)
-                            });
-                        }
-                    } else {
-                        Log.d(LOG_TAG, "did not find a video for this favorite movie in the db");
-                    }
-                    videosCursor.close();
-
-                    final String[] reviewProjection = new String[] {
-                            MovieContract.ReviewEntry.COLUMN_AUTHOR,
-                            MovieContract.ReviewEntry.COLUMN_CONTENT
-                    };
-
-                    final int AUTHOR_IDX = 0;
-                    final int CONTENT_IDX = 1;
-
-                    Cursor reviewsCursor = getActivity().getContentResolver().query(
-                            MovieContract.ReviewEntry.CONTENT_URI,
-                            reviewProjection,
-                            MovieContract.ReviewEntry.COLUMN_MOVIE_KEY +"=?",
-                            new String[]{String.valueOf(mMovie.getTmdbId())},
-                            null
-                    );
-                    if (reviewsCursor.moveToFirst()) {
-                        Log.d(LOG_TAG, "found a review for this favorite movie in the db");
-                        mMovie.addReview(new String[]{
-                                reviewsCursor.getString(AUTHOR_IDX),
-                                reviewsCursor.getString(CONTENT_IDX)
-                        });
-                        while (reviewsCursor.moveToNext()) {
-                            mMovie.addReview(new String[]{
-                                    reviewsCursor.getString(AUTHOR_IDX),
-                                    reviewsCursor.getString(CONTENT_IDX)
-                            });
-                        }
-                    } else {
-                        Log.d(LOG_TAG, "did not find a review for this favorite movie in the db");
-                    }
-                    reviewsCursor.close();
-
-                } else {
-                    Log.e(LOG_TAG, "Could not find this movie in the favorites table...");
-                }
+                createMovieObjectFromFavoritesTable(movieUri);
 
             } else {
                 Log.v(LOG_TAG, "No Movie object or Uri found when launching fragment");
@@ -302,49 +157,20 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                         mMovie.addToFavorites(getActivity(), mPosterDrawable);
                     }
 
-                    //Log.d(LOG_TAG, "Movie is marked as favorite: " + mMovie.isFavorite());
-
-//                    Cursor cursor = getActivity().getContentResolver().query(
-//                            MovieContract.FavoritesEntry.CONTENT_URI,
-//                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
-//                            null,
-//                            null,
-//                            null);
-//                    String favoriteTitles = "";
-//                    if (cursor.moveToFirst()) {
-//                        favoriteTitles = cursor.getString(0);
-//                    }
-//                    while (cursor.moveToNext()) {
-//                        favoriteTitles += " " + cursor.getString(0);
-//                    }
-//                    cursor.close();
-//                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
-
                     // in case we weren't able to mark this movie as favorite
                     if (!mMovie.isFavorite()) {
                         buttonView.setChecked(false);
                         Toast toast = Toast.makeText(getActivity(), "Sorry, this movie could not be added to favorites at this time.", Toast.LENGTH_SHORT);
                         toast.show();
+                    } else {
+                        Toast toast = Toast.makeText(getActivity(), "Movie saved to Favorites", Toast.LENGTH_SHORT);
+                        toast.show();
                     }
 
                 } else {
                     mMovie.removeFromFavorites(getActivity());
-
-//                    Cursor cursor = getActivity().getContentResolver().query(
-//                            MovieContract.FavoritesEntry.CONTENT_URI,
-//                            new String[]{MovieContract.FavoritesEntry.COLUMN_TITLE},
-//                            null,
-//                            null,
-//                            null);
-//                    String favoriteTitles = "";
-//                    if (cursor.moveToFirst()) {
-//                        favoriteTitles = cursor.getString(0);
-//                    }
-//                    while (cursor.moveToNext()) {
-//                        favoriteTitles += " " + cursor.getString(0);
-//                    }
-//                    cursor.close();
-//                    Log.d(LOG_TAG, "Favorite titles: " + favoriteTitles);
+                    Toast toast = Toast.makeText(getActivity(), "Movie removed from Favorites", Toast.LENGTH_SHORT);
+                    toast.show();
                 }
             }
         });
@@ -362,25 +188,35 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         ((TextView) (rootView.findViewById(R.id.vote_count))).setText(
                 "Ratings: " + String.valueOf(mMovie.getVoteCount()));
 
+        mCastTextView = ((TextView) (rootView.findViewById(R.id.cast)));
+
         ((TextView) (rootView.findViewById(R.id.movie_synopsis))).setText(mMovie.getMovieSynopsis());
 
         // Run AsyncTask to query API for videos and reviews if the movie doesn't already have them,
         // and populate views for videos and reviews into fragment.
-        new FetchMovieVideosAndReviews().execute();
+        new FetchMovieCast_Videos_Reviews().execute();
 
         return rootView;
     }
 
-    public class FetchMovieVideosAndReviews extends AsyncTask<String, Void, Void> {
+    public class FetchMovieCast_Videos_Reviews extends AsyncTask<String, Void, Void> {
 
-        private final String LOG_TAG = FetchMovieVideosAndReviews.class.getSimpleName();
+        private final String LOG_TAG = FetchMovieCast_Videos_Reviews.class.getSimpleName();
 
         @Override
         protected Void doInBackground(String... params) {
 
             if (Utility.isOnline(getActivity())) {
+                if (mMovie.getCastArray()==null || mMovie.getCastArray().length==0){
+                    URL castQueryUrl = Utility.getCastQueryUrl(getActivity(),mMovie.getTmdbId());
+                    try {
+                        Utility.saveMovieCastInfo(mMovie, castQueryUrl);
+                    } catch (JSONException e) {
+                        Log.e(LOG_TAG, e.getMessage());
+                    }
+                }
                 if (!mMovie.hasVideos()) {
-                    URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getMovieID());
+                    URL videoQueryUrl = Utility.getVideoQueryUrl(getActivity(), mMovie.getTmdbId());
                     try {
                         Utility.saveMovieVideoInfo(mMovie, videoQueryUrl);
                     } catch (JSONException e) {
@@ -389,7 +225,7 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                 }
 
                 if (!mMovie.hasReviews()) {
-                    URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getMovieID());
+                    URL reviewQueryUrl = Utility.getReviewQueryUrl(getActivity(), mMovie.getTmdbId());
                     try {
                         Utility.saveMovieReviews(mMovie, reviewQueryUrl);
                     } catch (JSONException e) {
@@ -397,13 +233,14 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
                     }
                 }
             } else {
-                Log.d(LOG_TAG, "Internet connection not available. Did not query for videos and reviews");
+                Log.d(LOG_TAG, "Internet connection not available. Did not query for cast, videos and reviews");
             }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void result) {
+            createCastTextView();
             loadVideoViews(mMovie);
             loadReviewViews(mMovie);
         }
@@ -434,6 +271,16 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
             }
         } else {
             mLinearLayout.addView(createNoContentAvailableView("reviews"));
+        }
+    }
+
+    private void createCastTextView(){
+        if (mMovie.getCastArray() != null && mMovie.getCastArray().length>0){
+            String castText = "Cast: " + mMovie.getCastArray()[0];
+            for (int i = 1; i<mMovie.getCastArray().length; i++) {
+                castText = castText + ", " + mMovie.getCastArray()[i];
+            }
+            mCastTextView.setText(castText);
         }
     }
 
@@ -508,4 +355,128 @@ public class MovieDetailFragment extends Fragment implements View.OnClickListene
         Intent intent = new Intent(Intent.ACTION_VIEW).setData(videoUri);
         startActivity(intent);
     }
+
+    public void setMovieObjectCastMembersFromDb() {
+        // query the cast table to see if this movie has a cast associated with it
+        Cursor castCursor = getActivity().getContentResolver().query(
+                MovieContract.CastEntry.CONTENT_URI,
+                null,
+                MovieContract.CastEntry.COLUMN_MOVIE_KEY + "=?",
+                new String[]{String.valueOf(mMovie.getTmdbId())},
+                null
+        );
+        // if it does
+        if (castCursor.moveToFirst()) {
+            //add them all to the movie object
+            String[] castMembers = new String[castCursor.getCount()];
+            int i = 0;
+            do {
+                castMembers[i] = castCursor.getString(castCursor.getColumnIndex(MovieContract.CastEntry.COLUMN_CAST_MEMBER));
+                i++;
+            } while (castCursor.moveToNext());
+            mMovie.setCastArray(castMembers);
+        }
+        castCursor.close();
+    }
+
+    public void setMovieObjectVideosFromDb(){
+        // query the videos table to see if this favorite movie has any videos
+        Cursor videosCursor = getActivity().getContentResolver().query(
+                MovieContract.VideoEntry.CONTENT_URI,
+                null,
+                MovieContract.VideoEntry.COLUMN_MOVIE_KEY + "=?",
+                new String[]{String.valueOf(mMovie.getTmdbId())},
+                null
+        );
+        //if it does
+        if (videosCursor.moveToFirst()) {
+            // add them all to the movie object
+            do {
+                String[] video =
+                        {videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_YOUTUBE_KEY)),
+                                videosCursor.getString(videosCursor.getColumnIndex(MovieContract.VideoEntry.COLUMN_NAME))
+                        };
+                mMovie.addVideo(video);
+
+            } while (videosCursor.moveToNext());
+        }
+        videosCursor.close();
+    }
+
+    public void setMovieObjectReviewsFromDb(){
+        //query the reviews table to see if this favorite movie has any reviews
+        Cursor reviewsCursor = getActivity().getContentResolver().query(
+                MovieContract.ReviewEntry.CONTENT_URI,
+                null,
+                MovieContract.ReviewEntry.COLUMN_MOVIE_KEY + "=?",
+                new String[]{String.valueOf(mMovie.getTmdbId())},
+                null
+        );
+
+        // if it does
+        if (reviewsCursor.moveToFirst()) {
+            //add them all to the movie object
+            do {
+                String[] review =
+                        {reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_AUTHOR)),
+                                reviewsCursor.getString(reviewsCursor.getColumnIndex(MovieContract.ReviewEntry.COLUMN_CONTENT))
+                        };
+                mMovie.addReview(review);
+            } while (reviewsCursor.moveToNext());
+        }
+        reviewsCursor.close();
+    }
+
+    public void createMovieObjectFromFavoritesTable(Uri movieUri) {
+        final String[] movieProjection = {
+                MovieContract.FavoritesEntry.COLUMN_TMDB_ID,
+                MovieContract.FavoritesEntry.COLUMN_TITLE,
+                MovieContract.FavoritesEntry.COLUMN_PLOT_SYNOPSIS,
+                MovieContract.FavoritesEntry.COLUMN_TMDB_POSTER_PATH,
+                MovieContract.FavoritesEntry.COLUMN_RATING,
+                MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE,
+                MovieContract.FavoritesEntry.COLUMN_VOTE_COUNT,
+                MovieContract.FavoritesEntry.COLUMN_POSTER_FILE_ON_DISK_URL,
+        };
+        final int TMDB_ID_IDX = 0;
+        final int TITLE_IDX = 1;
+        final int SYNOPSIS_IDX = 2;
+        final int POSTER_PATH_IDX = 3;
+        final int RATING_IDX = 4;
+        final int RELEASE_DATE_IDX = 5;
+        final int VOTE_COUNT_IDX = 6;
+        final int POSTER_ON_DISK_URL_IDX = 7;
+
+        long favoriteMovie_id = MovieContract.FavoritesEntry.getMovieIdFromUri(movieUri);
+        Cursor movieCursor = getActivity().getContentResolver().query(
+                MovieContract.FavoritesEntry.CONTENT_URI,
+                movieProjection,
+                MovieContract.FavoritesEntry._ID + "=?",
+                new String[]{String.valueOf(favoriteMovie_id)},
+                null);
+
+        if (movieCursor.moveToFirst()) {
+            //create the movie object and set it's basic values
+            mMovie = new Movie();
+            mMovie.setMovieTitle(movieCursor.getString(TITLE_IDX));
+            mMovie.setMoviePosterPath(movieCursor.getString(POSTER_PATH_IDX));
+            mMovie.setMovieReleaseDate(movieCursor.getString(RELEASE_DATE_IDX));
+            mMovie.setMovieSynopsis(movieCursor.getString(SYNOPSIS_IDX));
+            mMovie.setTmdbId(movieCursor.getInt(TMDB_ID_IDX));
+            mMovie.setMovieUserRating(movieCursor.getDouble(RATING_IDX));
+            mMovie.setVoteCount(movieCursor.getInt(VOTE_COUNT_IDX));
+            mMovie.setPosterOnDiskUrlStr(movieCursor.getString(POSTER_ON_DISK_URL_IDX));
+            mMovie.setIsFavorite(true);
+
+            movieCursor.close();
+
+            setMovieObjectCastMembersFromDb();
+            setMovieObjectVideosFromDb();
+            setMovieObjectReviewsFromDb();
+
+        } else {
+            Log.e(LOG_TAG, "Could not find this movie in the favorites table...");
+        }
+    }
+
 }

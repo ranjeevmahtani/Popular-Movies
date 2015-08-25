@@ -17,6 +17,8 @@ public class MovieContract {
 
     public static final String PATH_FAVORITES = "favorites";
 
+    public static final String PATH_CAST = "cast";
+
     public static final String PATH_VIDEOS = "videos";
 
     public static final String PATH_REVIEWS = "reviews";
@@ -64,6 +66,30 @@ public class MovieContract {
             return Long.parseLong(movieUri.getPathSegments().get(1));
         }
 
+    }
+
+    // Table to store movie cast info
+    public static final class CastEntry implements BaseColumns {
+
+        public static final Uri CONTENT_URI =
+                BASE_CONTENT_URI.buildUpon().appendPath(PATH_CAST).build();
+
+        public static final String CONTENT_TYPE =
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_CAST;
+
+        public static final String CONTENT_ITEM_TYPE =
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_CAST;
+
+        //Table name
+        public static final String TABLE_NAME = "cast";
+
+        public static final String COLUMN_MOVIE_KEY = "movie_tmdbId";
+
+        public static final String COLUMN_CAST_MEMBER = "cast_member";
+
+        public static Uri buildCastMemberUri(long id) {
+            return ContentUris.withAppendedId(CONTENT_URI, id);
+        }
     }
 
     // Table to store video info for favorite movies

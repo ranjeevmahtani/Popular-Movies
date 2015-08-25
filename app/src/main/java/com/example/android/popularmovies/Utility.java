@@ -50,9 +50,27 @@ public class Utility {
         }
     }
 
+    public static URL getCastQueryUrl(Context context, long movieId) {
+        try {
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme("http")
+                    .authority("api.themoviedb.org")
+                    .appendPath("3")
+                    .appendPath("movie")
+                    .appendPath(String.valueOf(movieId))
+                    .appendPath("credits")
+                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+
+            return new URL(builder.build().toString());
+
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Error ", e);
+            return null;
+        }
+    }
+
 
     public static URL getVideoQueryUrl(Context context, long movieId) {
-        final String LOG_TAG = "getVideoQueryUrl(...)";
 
         try {
             Uri.Builder builder = new Uri.Builder();
@@ -63,8 +81,6 @@ public class Utility {
                     .appendPath(String.valueOf(movieId))
                     .appendPath("videos")
                     .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
-
-            // Log.v(LOG_TAG, builder.build().toString());
 
             return new URL(builder.build().toString());
 
@@ -96,7 +112,6 @@ public class Utility {
             return null;
         }
     }
-
 
     public static Movie[] getMovieArrayFromJsonStr(String moviesDataStr) throws JSONException {
 
@@ -133,6 +148,38 @@ public class Utility {
             //Log.v(LOG_TAG,"Movie " + i + ": " + moviesObjectArray[i].getMovieTitle());
         }
         return moviesObjectArray;
+    }
+
+    public static void saveMovieCastInfo(Movie movie, URL castQueryUrl) throws JSONException {
+        try {
+            final String TMDB_CAST_LIST = "cast";
+            final String TMDB_CAST_NAME_KEY = "name";
+
+            String castQueryResponseStr = requestDataFromApi(castQueryUrl);
+
+            if (castQueryResponseStr != null && !castQueryResponseStr.equals("")) {
+
+                JSONObject castQueryResponseJson = new JSONObject(castQueryResponseStr);
+                JSONArray castJsonArray = castQueryResponseJson.getJSONArray(TMDB_CAST_LIST);
+
+                if (castJsonArray.length() == 0) {
+                    movie.setNoCast();
+                } else {
+                    int castArraySize = Math.min(3,castJsonArray.length());
+                    String[] movieCast = new String[castArraySize];
+                    for (int i = 0; i < castArraySize; i++) {
+                        String castMember = castJsonArray.getJSONObject(i).getString(TMDB_CAST_NAME_KEY);
+                        movieCast[i] = castMember;
+                    }
+                    movie.setCastArray(movieCast);
+                }
+            } else {
+                movie.setNoCast();
+            }
+
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error ", e);
+        }
     }
 
     public static void saveMovieVideoInfo(Movie movie, URL videoQueryUrl) throws JSONException {

@@ -45,6 +45,7 @@ public class Movie implements Parcelable{
 
     private ArrayList<String[]> videos;
     private ArrayList<String[]> reviews;
+    private String[] castArray;
 
     public Movie(){
 
@@ -58,6 +59,7 @@ public class Movie implements Parcelable{
         this.reviews = new ArrayList<String[]>();
         setNoVideos();
         setNoReviews();
+        setNoCast();
         this.isFavorite = false;
 
     }
@@ -66,7 +68,7 @@ public class Movie implements Parcelable{
         this.tmdbId = tmdbId;
     }
 
-    public long getMovieID(){
+    public long getTmdbId(){
         return tmdbId;
     }
 
@@ -114,10 +116,6 @@ public class Movie implements Parcelable{
         this.voteCount = voteCount;
     }
 
-    public long getTmdbId() {
-        return tmdbId;
-    }
-
     public String getMovieReleaseDate(){
         return releaseDate;
     }
@@ -134,6 +132,14 @@ public class Movie implements Parcelable{
 
     public void setIsFavorite(boolean isFavorite) {
         this.isFavorite = isFavorite;
+    }
+
+    public String[] getCastArray() {
+        return castArray;
+    }
+
+    public void setCastArray(String[] castArray) {
+        this.castArray = castArray;
     }
 
     public String getPosterOnDiskUrlStr() {
@@ -190,6 +196,24 @@ public class Movie implements Parcelable{
                         MovieContract.FavoritesEntry.CONTENT_URI,
                         movieValues
                 );
+
+                // add the castArray to the castArray table
+                if (castArray != null && castArray.length >0){
+
+                    ContentValues[] castCvArray = new ContentValues[castArray.length];
+                    for (int i = 0; i<castArray.length; i++) {
+                        ContentValues castContentValue = new ContentValues();
+                        castContentValue.put(MovieContract.CastEntry.COLUMN_MOVIE_KEY,this.tmdbId);
+                        castContentValue.put(MovieContract.CastEntry.COLUMN_CAST_MEMBER, castArray[i]);
+                        castCvArray[i] = castContentValue;
+                    }
+                    if (castCvArray.length>0) {
+                        int rowsInserted = context.getContentResolver().bulkInsert(
+                                MovieContract.CastEntry.CONTENT_URI,
+                                castCvArray);
+                        Log.d(LOG_TAG, rowsInserted + " rows inserted into cast table");
+                    }
+                }
 
                 // add the videos to the videos table
                 Vector<ContentValues> videoCvVector = new Vector<ContentValues>(videos.size());
@@ -350,6 +374,10 @@ public class Movie implements Parcelable{
         return reviews;
     }
 
+    public void setNoCast() {
+        this.castArray = new String[0];
+    }
+
     public void setNoVideos() {
         this.videos.clear();
         this.hasVideos = false;
@@ -424,6 +452,7 @@ public class Movie implements Parcelable{
             out.writeByte((byte) (1));
             out.writeList(reviews);
         }
+        out.writeArray(castArray);
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {
@@ -462,6 +491,7 @@ public class Movie implements Parcelable{
         } else {
             reviews = null;
         }
+        castArray = in.createStringArray();
     }
 }
 

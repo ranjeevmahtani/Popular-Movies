@@ -21,6 +21,7 @@ public class MovieProvider extends ContentProvider{
     static final int VIDEOS = 200;
     static final int REVIEWS = 300;
     static final int MOVIES = 400;
+    static final int CAST = 500;
 
     private static final SQLiteQueryBuilder sMovieVideoQueryBuilder;
 
@@ -60,6 +61,7 @@ public class MovieProvider extends ContentProvider{
         final String authority = MovieContract.CONTENT_AUTHORITY;
 
         matcher.addURI(authority,MovieContract.PATH_FAVORITES, FAVORITES);
+        matcher.addURI(authority,MovieContract.PATH_CAST, CAST);
         matcher.addURI(authority,MovieContract.PATH_VIDEOS, VIDEOS);
         matcher.addURI(authority,MovieContract.PATH_REVIEWS, REVIEWS);
         matcher.addURI(authority,MovieContract.PATH_MOVIES, MOVIES);
@@ -79,6 +81,7 @@ public class MovieProvider extends ContentProvider{
 
         switch (match) {
             case FAVORITES: return MovieContract.FavoritesEntry.CONTENT_TYPE;
+            case CAST: return MovieContract.CastEntry.CONTENT_TYPE;
             case VIDEOS: return MovieContract.VideoEntry.CONTENT_TYPE;
             case REVIEWS: return MovieContract.ReviewEntry.CONTENT_TYPE;
             case MOVIES: return MovieContract.MovieEntry.CONTENT_TYPE;
@@ -93,6 +96,18 @@ public class MovieProvider extends ContentProvider{
             case FAVORITES: {
                 retCursor = mOpenHelper.getReadableDatabase().query(
                         MovieContract.FavoritesEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder
+                );
+                break;
+            }
+            case CAST: {
+                retCursor = mOpenHelper.getReadableDatabase().query(
+                        MovieContract.CastEntry.TABLE_NAME,
                         projection,
                         selection,
                         selectionArgs,
@@ -160,6 +175,13 @@ public class MovieProvider extends ContentProvider{
                 break;
             }
 
+            case CAST: {
+                long _id = db.insert(MovieContract.CastEntry.TABLE_NAME,null,contentValues);
+                if (_id>0) returnUri = MovieContract.CastEntry.buildCastMemberUri(_id);
+                else throw new android.database.SQLException("Failed to insert row into cast table");
+                break;
+            }
+
             case VIDEOS: {
                 long _id = db.insert(MovieContract.VideoEntry.TABLE_NAME,null,contentValues);
                 if (_id>0) returnUri = MovieContract.VideoEntry.buildVideoUri(_id);
@@ -203,6 +225,12 @@ public class MovieProvider extends ContentProvider{
                 break;
             }
 
+            case CAST: {
+                rowsDeleted = db.delete(
+                        MovieContract.CastEntry.TABLE_NAME,selection, selectionArgs);
+                break;
+            }
+
             case VIDEOS: {
                 rowsDeleted = db.delete(
                         MovieContract.VideoEntry.TABLE_NAME, selection, selectionArgs);
@@ -243,6 +271,11 @@ public class MovieProvider extends ContentProvider{
                         selectionArgs);
                 break;
             }
+            case CAST: {
+                rowsUpdated = db.update(MovieContract.CastEntry.TABLE_NAME, contentValues, selection,
+                        selectionArgs);
+                break;
+            }
             case VIDEOS: {
                 rowsUpdated = db.update(MovieContract.VideoEntry.TABLE_NAME, contentValues, selection,
                         selectionArgs);
@@ -277,6 +310,23 @@ public class MovieProvider extends ContentProvider{
                 try {
                     for (ContentValues value : values) {
                         long _id = db.insert(MovieContract.FavoritesEntry.TABLE_NAME, null, value);
+                        if (_id != -1) {
+                            returnCount++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                getContext().getContentResolver().notifyChange(uri, null);
+                return returnCount;
+            }
+            case CAST: {
+                db.beginTransaction();
+                int returnCount = 0;
+                try {
+                    for (ContentValues value : values) {
+                        long _id = db.insert(MovieContract.CastEntry.TABLE_NAME,null,value);
                         if (_id != -1) {
                             returnCount++;
                         }
