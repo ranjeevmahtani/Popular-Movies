@@ -36,7 +36,7 @@ public class Utility {
                     .appendPath("search")
                     .appendPath("movie")
                     .appendQueryParameter("query", encodedQuery)
-                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+                    .appendQueryParameter(context.getString(R.string.API_key_query_param), context.getString(R.string.API_key));
             return new URL(builder.build().toString());
         } catch (MalformedURLException e) {
             Log.e(LOG_TAG,e.getMessage());
@@ -64,7 +64,7 @@ public class Utility {
                         .appendQueryParameter("vote_count.gte", "25"); // hard-coded minimum vote count
             }
 
-            builder.appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+            builder.appendQueryParameter(context.getString(R.string.API_key_query_param), context.getString(R.string.API_key));
 
             return new URL(builder.build().toString());
         } catch (IOException e) {
@@ -82,7 +82,7 @@ public class Utility {
                     .appendPath("movie")
                     .appendPath(String.valueOf(movieId))
                     .appendPath("credits")
-                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+                    .appendQueryParameter(context.getString(R.string.API_key_query_param), context.getString(R.string.API_key));
 
             return new URL(builder.build().toString());
 
@@ -103,7 +103,7 @@ public class Utility {
                     .appendPath("movie")
                     .appendPath(String.valueOf(movieId))
                     .appendPath("videos")
-                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+                    .appendQueryParameter(context.getString(R.string.API_key_query_param), context.getString(R.string.API_key));
 
             return new URL(builder.build().toString());
 
@@ -124,7 +124,7 @@ public class Utility {
                     .appendPath("movie")
                     .appendPath(String.valueOf(movieId))
                     .appendPath("reviews")
-                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+                    .appendQueryParameter(context.getString(R.string.API_key_query_param), context.getString(R.string.API_key));
 
             // Log.v(LOG_TAG, builder.build().toString());
 

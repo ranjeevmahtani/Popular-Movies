@@ -21,8 +21,9 @@
     <string name="API_param_upcoming">upcoming</string>
     <string name="API_param_descending_popularity">popularity.desc</string>
     <string name="API_param_descending_rating">vote_average.desc</string>
-    <string name="API_query_key">api_key</string>
-    <string name="API_param_key">f33b502258ce62793fa2d89c5ad380b0</string>
+    <string name="API_key_query_param">api_key</string>
+
+    <string name="API_key"></string>
 
     <string name="API_poster_base_URL">http://image.tmdb.org/t/p</string>
     <string name="title_activity_movie_detail">Movie Detail</string>
