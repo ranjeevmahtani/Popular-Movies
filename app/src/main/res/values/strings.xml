@@ -8,6 +8,7 @@
     <string name="action_discover_by_popularity">Most Popular</string>
     <string name="action_discover_by_user_rating">Highest Rated</string>
     <string name="action_view_favorites">Saved Favorites</string>
+    <string name="action_search">Search</string>
     <string name="action_settings">Settings</string>
     <string name="action_share">Share</string>
 

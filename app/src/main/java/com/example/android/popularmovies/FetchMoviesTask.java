@@ -20,7 +20,6 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
     private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
 
     private Context mContext;
-
     private MoviePosterAdapter mMoviePosterAdapter;
 
     public FetchMoviesTask(Context context, MoviePosterAdapter moviePosterAdapter) {

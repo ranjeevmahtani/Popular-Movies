@@ -13,8 +13,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 
 /**
  * Created by ranjeevmahtani on 7/27/15.
@@ -22,6 +25,26 @@ import java.net.URL;
 public class Utility {
 
     final static String LOG_TAG = Utility.class.getSimpleName();
+
+    public static URL getSearchQueryUrl(Context context, String query){
+        try {
+            String encodedQuery = URLEncoder.encode(query,"UTF-8");
+            Uri.Builder builder = new Uri.Builder();
+            builder.scheme("http")
+                    .authority("api.themoviedb.org")
+                    .appendPath("3")
+                    .appendPath("search")
+                    .appendPath("movie")
+                    .appendQueryParameter("query", encodedQuery)
+                    .appendQueryParameter(context.getString(R.string.API_query_key), context.getString(R.string.API_param_key));
+            return new URL(builder.build().toString());
+        } catch (MalformedURLException e) {
+            Log.e(LOG_TAG,e.getMessage());
+        } catch (UnsupportedEncodingException e) {
+            Log.e(LOG_TAG,e.getMessage());
+        }
+        return null;
+    }
 
     public static URL getDiscoveryQueryUrl(Context context, String sortOption) {
         try {
@@ -115,7 +138,6 @@ public class Utility {
 
     public static Movie[] getMovieArrayFromJsonStr(String moviesDataStr) throws JSONException {
 
-        final int resultCount = 20; //20 results shown per page: initial setting
         // These are the names of the JSON objects that need to be extracted.
         final String TMDB_MOVIES_LIST = "results";
         final String TMDB_MOVIE_ID = "id";
@@ -130,7 +152,7 @@ public class Utility {
         JSONArray moviesJsonArray = moviesJsonResult.getJSONArray(TMDB_MOVIES_LIST);
 
         //Create an array of movie objects to store relevant details from the JSON results
-        Movie[] moviesObjectArray = new Movie[resultCount];
+        Movie[] moviesObjectArray = new Movie[moviesJsonArray.length()];
         //for each movie in the JSON array, create a Movie object and store the relevant details
         for (int i = 0; i < moviesJsonArray.length(); i++) {
             Movie movie = new Movie();
@@ -272,8 +294,6 @@ public class Utility {
     }
 
     public static String requestDataFromApi(URL queryURL) {
-
-        Log.v(LOG_TAG, "hittin up the interwebs");
 
         HttpURLConnection urlConnection = null;
         BufferedReader reader = null;

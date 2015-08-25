@@ -165,7 +165,7 @@ public class Movie implements Parcelable{
         } else {
 
             mPosterOnDiskUrlStr = savePosterToDisk(context, posterDrawable);
-            Log.d(LOG_TAG, "mPosterOnDiskUrlStr = " + mPosterOnDiskUrlStr);
+            // Log.d(LOG_TAG, "mPosterOnDiskUrlStr = " + mPosterOnDiskUrlStr);
 
 
 //            MyTarget target = new MyTarget(context, getTmdbId(), posterDrawable);
@@ -211,7 +211,7 @@ public class Movie implements Parcelable{
                         int rowsInserted = context.getContentResolver().bulkInsert(
                                 MovieContract.CastEntry.CONTENT_URI,
                                 castCvArray);
-                        Log.d(LOG_TAG, rowsInserted + " rows inserted into cast table");
+//                        Log.d(LOG_TAG, rowsInserted + " rows inserted into cast table");
                     }
                 }
 
@@ -231,7 +231,7 @@ public class Movie implements Parcelable{
                     ContentValues[] cvArray = new ContentValues[videoCvVector.size()];
                     videoCvVector.toArray(cvArray);
                     int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.VideoEntry.CONTENT_URI,cvArray);
-                    Log.v(LOG_TAG, "rows inserted into videos table: " + rowsInserted);
+//                    Log.v(LOG_TAG, "rows inserted into videos table: " + rowsInserted);
                 }
 
                 // add the reviews to the reviews table
@@ -250,13 +250,13 @@ public class Movie implements Parcelable{
                     ContentValues[] reviewCvArray = new ContentValues[reviewCvVector.size()];
                     reviewCvVector.toArray(reviewCvArray);
                     int rowsInserted = context.getContentResolver().bulkInsert(MovieContract.ReviewEntry.CONTENT_URI,reviewCvArray);
-                    Log.v(LOG_TAG, "rows inserted into reviews table: " + rowsInserted);
+//                    Log.v(LOG_TAG, "rows inserted into reviews table: " + rowsInserted);
                 }
 
                 this.isFavorite = true;
 
             } else {
-                Log.e(LOG_TAG, "movie was not added to favorites");
+//                Log.e(LOG_TAG, "movie was not added to favorites");
             }
             movieCursor.close();
         }

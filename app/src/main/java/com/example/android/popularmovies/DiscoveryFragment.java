@@ -23,6 +23,7 @@ public class DiscoveryFragment extends Fragment {
 
     private final String LOG_TAG = DiscoveryFragment.class.getSimpleName();
 
+    public static final String BUNDLED_MOVIE_ARRAY_KEY = "bundledmoviearraykey";
     public static final String DISCOVERY_CODE_KEY = "discoveryCode";
     public static final int DISCOVER_BY_POPULARITY_CODE = 100;
     public static final int DISCOVER_BY_USER_RATING_CODE = 101;
@@ -108,19 +109,19 @@ public class DiscoveryFragment extends Fragment {
         gridView.setAdapter(mMoviePosterAdapter);
         //Log.v(LOG_TAG, "gridView.setAdapter(mMoviePosterAdapter) passed");
 
-        if (savedInstanceState != null && savedInstanceState.containsKey("movieArray")){
+        if (savedInstanceState != null && savedInstanceState.containsKey(BUNDLED_MOVIE_ARRAY_KEY)){
 
             // Log.v(LOG_TAG, "savedInstanceState is not null, and it does contain a key called movieArray");
             // Log.v(LOG_TAG,"retrieving movies from saved movieArray");
 
-            Parcelable[] movieArray = savedInstanceState.getParcelableArray("movieArray");
+            Parcelable[] movieArray = savedInstanceState.getParcelableArray(BUNDLED_MOVIE_ARRAY_KEY);
             mMovieArrayList = new ArrayList<Movie>();
             for (Parcelable movie : movieArray){
                 mMovieArrayList.add((Movie) movie);
             }
-
             mMoviePosterAdapter.clear();
             mMoviePosterAdapter.addAll(mMovieArrayList);
+            mMoviePosterAdapter.notifyDataSetChanged();
             // Log.v(LOG_TAG, "mMovieArrayList has been added to mMoviePosterAdapter");
         } else {
             // Log.v(LOG_TAG, "savedInstance state is either null or does not contain a \"movieArray\"");
@@ -128,7 +129,18 @@ public class DiscoveryFragment extends Fragment {
             Bundle arguments = getArguments();
             if (arguments != null && arguments.containsKey(DISCOVERY_CODE_KEY)) {
                 discover(arguments.getInt(DISCOVERY_CODE_KEY));
-            } else {
+            } else if (arguments != null && arguments.containsKey(BUNDLED_MOVIE_ARRAY_KEY)) {
+                mMovieArrayList = new ArrayList<Movie>();
+                Parcelable[] movieArray = arguments.getParcelableArray(BUNDLED_MOVIE_ARRAY_KEY);
+                for (Parcelable movie : movieArray) {
+                    mMovieArrayList.add((Movie) movie);
+                }
+                mMoviePosterAdapter.clear();
+                mMoviePosterAdapter.addAll(mMovieArrayList);
+                mMoviePosterAdapter.notifyDataSetChanged();
+
+            }
+            else {
                 discover(DISCOVER_NOW_PLAYING_CODE);
             }
         }
@@ -145,7 +157,7 @@ public class DiscoveryFragment extends Fragment {
             for (int i = 0; i < mMovieArrayList.size(); i++){
                 movieArray[i] = (mMovieArrayList.get(i));
             }
-            outState.putParcelableArray("movieArray", movieArray);
+            outState.putParcelableArray(BUNDLED_MOVIE_ARRAY_KEY, movieArray);
         }
 
         super.onSaveInstanceState(outState);
