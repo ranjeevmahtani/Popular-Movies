@@ -280,6 +280,13 @@ public class Movie implements Parcelable{
 
             String movieTmdbId = cursor.getString(0);
 
+            // delete any saved cast information for this movie
+            int castDeletedCount = context.getContentResolver().delete(
+                    MovieContract.CastEntry.CONTENT_URI,
+                    MovieContract.CastEntry.COLUMN_MOVIE_KEY + "=?",
+                    new String[]{movieTmdbId});
+            //  Log.d(LOG_TAG, castDeletedCount + " cast members deleted for this movie");
+
             //delete any saved videos for this movie from the videos table
             int videosDeletedCount = context.getContentResolver().delete(
                     MovieContract.VideoEntry.CONTENT_URI,
