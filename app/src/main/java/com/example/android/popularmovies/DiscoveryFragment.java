@@ -141,6 +141,7 @@ public class DiscoveryFragment extends Fragment {
 
             }
             else {
+                mMovieArrayList = new ArrayList<Movie>();
                 discover(DISCOVER_NOW_PLAYING_CODE);
             }
         }
@@ -168,7 +169,7 @@ public class DiscoveryFragment extends Fragment {
     }
 
     public void discover(int discoveryCode) {
-        FetchMoviesTask moviesTask = new FetchMoviesTask(getActivity(), mMoviePosterAdapter);
+        FetchMoviesTask moviesTask = new FetchMoviesTask(getActivity(), mMoviePosterAdapter, mMovieArrayList);
 
         switch (discoveryCode) {
             case DISCOVER_NOW_PLAYING_CODE: {

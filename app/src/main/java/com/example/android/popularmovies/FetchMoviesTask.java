@@ -15,20 +15,22 @@ import java.util.Arrays;
  * Created by ranjeevmahtani on 8/14/15.
  */
 
-public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
+public class FetchMoviesTask extends AsyncTask<String, Void, Void> {
 
     private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
 
     private Context mContext;
     private MoviePosterAdapter mMoviePosterAdapter;
+    private ArrayList<Movie> mMovieArrayList;
 
-    public FetchMoviesTask(Context context, MoviePosterAdapter moviePosterAdapter) {
+    public FetchMoviesTask(Context context, MoviePosterAdapter moviePosterAdapter, ArrayList<Movie> movieArrayList) {
         mContext = context;
         mMoviePosterAdapter = moviePosterAdapter;
+        mMovieArrayList = movieArrayList;
     }
 
     @Override
-    protected Movie[] doInBackground(String... sortOption) {
+    protected Void doInBackground(String... sortOption) {
 
         URL queryURL = Utility.getDiscoveryQueryUrl(mContext, sortOption[0]);
 
@@ -38,7 +40,13 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
 
             try {
                 movies = Utility.getMovieArrayFromJsonStr(moviesJsonStr);
-                return movies;
+
+                if (movies != null && movies.length >0) {
+                    mMovieArrayList.clear();
+                    mMovieArrayList.addAll(Arrays.asList(movies));
+                }
+
+                return null;
             } catch (JSONException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
@@ -51,12 +59,11 @@ public class FetchMoviesTask extends AsyncTask<String, Void, Movie[]> {
     }
 
     @Override
-    protected void onPostExecute(Movie[] movies) {
+    protected void onPostExecute(Void result) {
 
-        if (movies != null) {
-            ArrayList<Movie> movieArrayList = new ArrayList<Movie>(Arrays.asList(movies));
+        if (mMovieArrayList != null) {
             mMoviePosterAdapter.clear();
-            mMoviePosterAdapter.addAll(movieArrayList);
+            mMoviePosterAdapter.addAll(mMovieArrayList);
             mMoviePosterAdapter.notifyDataSetChanged();
         }
         else {
